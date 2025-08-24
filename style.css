@@ -52,7 +52,7 @@ body {
     align-items: center;
     gap: 10px;
     margin: 0 0 8px 0;
-    letter-spacing: .4px
+    letter-spacing: .4px;
 }
 
 .title .dot {
@@ -81,18 +81,6 @@ body {
     position: relative;
 }
 
-.reel {
-    background: linear-gradient(180deg, rgba(255, 255, 255, .03), rgba(255, 255, 255, 0));
-    border-radius: 8px;
-    padding: 8px;
-    display: grid;
-    grid-template-rows: repeat(3, 1fr);
-    gap: 8px;
-    align-items: stretch;
-    justify-items: stretch;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .05);
-}
-
 .cell {
     display: flex;
     align-items: center;
@@ -112,25 +100,13 @@ body {
     transform: scale(1.03);
 }
 
-.reels.spinning .cell {
-    filter: blur(.5px) brightness(.95);
-}
-
-.reels::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: linear-gradient(180deg, rgba(11, 15, 23, 1)0%, rgba(11, 15, 23, 0)16%, rgba(11, 15, 23, 0)84%, rgba(11, 15, 23, 1)100%);
-}
-
 .hud {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    margin-top: 10px
+    margin-top: 10px;
 }
 
 .left,
@@ -138,7 +114,7 @@ body {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
-    align-items: center
+    align-items: center;
 }
 
 .stat,
@@ -158,7 +134,7 @@ label {
     font-size: 12px;
     color: var(--muted);
     display: block;
-    margin-bottom: 6px
+    margin-bottom: 6px;
 }
 
 select,
@@ -199,11 +175,11 @@ button[disabled] {
     opacity: .6;
     cursor: not-allowed;
     filter: grayscale(.3);
-    box-shadow: none
+    box-shadow: none;
 }
 
 .muted {
-    color: var(--muted)
+    color: var(--muted);
 }
 
 .message {
@@ -213,14 +189,9 @@ button[disabled] {
     text-shadow: 0 0 18px rgba(125, 249, 255, .35);
 }
 
-.message.big {
-    color: var(--win);
-    font-size: 18px
-}
-
 .sidebar .paytable {
     display: grid;
-    gap: 10px
+    gap: 10px;
 }
 
 .paytable h3 {
@@ -231,7 +202,7 @@ button[disabled] {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr;
     gap: 6px;
-    font-size: 14px
+    font-size: 14px;
 }
 
 .table div {
@@ -239,18 +210,18 @@ button[disabled] {
     padding: 8px 10px;
     border-radius: 8px;
     text-align: center;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .05)
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .05);
 }
 
 .table .head {
     background: #101a33;
     color: var(--muted);
-    font-weight: 700
+    font-weight: 700;
 }
 
 .legend {
     font-size: 12px;
-    color: var(--muted)
+    color: var(--muted);
 }
 
 .lines-preview {
@@ -258,7 +229,7 @@ button[disabled] {
     grid-template-columns: repeat(5, 14px);
     gap: 4px;
     margin-top: 6px;
-    opacity: .85
+    opacity: .85;
 }
 
 .dot2 {
@@ -266,11 +237,44 @@ button[disabled] {
     height: 14px;
     border-radius: 4px;
     background: linear-gradient(180deg, #1e2a4f, #0e1526);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06)
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06);
 }
 
 .footer {
     font-size: 12px;
     color: var(--muted);
-    margin-top: 8px
+    margin-top: 8px;
+}
+
+.credit-controls {
+    margin-top: 10px;
+}
+
+.credit-controls .credit-row {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+}
+
+#creditStep {
+    width: 90px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 10px;
+    color: var(--text);
+    outline: none;
+}
+
+#balance {
+    display: inline-block;
+    min-width: 80px;  /* reserve space */
+    font-family: monospace;
+    text-align: right;
+}
+
+.icon-btn {
+    min-width: 0;
+    padding: 8px 10px;
+    border-radius: 10px;
 }
