@@ -45,7 +45,7 @@
     const denomEl = $("#denom");
     const totalBetEl = $("#totalBet");
 
-    // Credit controls (already in HTML)
+    // Credit controls
     const creditStepEl = $("#creditStep");
     const creditUpBtn = $("#creditUp");
     const creditDownBtn = $("#creditDown");
@@ -57,8 +57,8 @@
     let denomination = 0.25;
 
     // spin/stop machinery
-    let rollInterval = null;   // setInterval for rolling animation
-    let spinTimer = null;      // setTimeout to auto-finalize spin if not stopped manually
+    let rollInterval = null;
+    let spinTimer = null;
     const SPIN_DURATION_MS = 1200;
 
     // Load persisted values
@@ -78,7 +78,17 @@
 
     // ----- UI HELPERS -----
     function setMessage(text, type = "") {
-        msgEl.textContent = text || "";
+        if (!msgEl) return;
+
+        let main = document.getElementById("messageMain");
+        if (!main) {
+            main = document.createElement("div");
+            main.id = "messageMain";
+            msgEl.textContent = "";
+            msgEl.appendChild(main);
+        }
+
+        main.textContent = text || "";
         msgEl.className = "message" + (type ? " " + type : "");
     }
 
@@ -131,7 +141,6 @@
 
     function initReels() {
         reelsEl.innerHTML = "";
-        // layout is row-major in DOM for simple CSS grid; we address via data-* attributes
         for (let r = 0; r < ROWS; r++) {
             for (let c = 0; c < COLS; c++) {
                 const cell = document.createElement("div");
@@ -274,6 +283,53 @@
         updateTotalBetUI();
     }
 
+    // Build the 3x5 preview grid dots and paint current selection
+    function buildLinesPreview() {
+        if (!previewEl) return;
+        previewEl.innerHTML = "";
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const dot = document.createElement("div");
+                dot.className = "dot2";
+                dot.dataset.row = String(r);
+                dot.dataset.col = String(c);
+                previewEl.appendChild(dot);
+            }
+        }
+        updateLinesPreview();
+    }
+
+    // Highlight the selected number of lines with green dots
+    function updateLinesPreview() {
+        if (!previewEl || !linesEl) return;
+        const dots = Array.from(previewEl.querySelectorAll(".dot2"));
+        dots.forEach(d => d.classList.remove("active", "path"));
+        dots.forEach(d => d.classList.add("active"));
+
+        const activeLines = Math.min(parseInt(linesEl.value, 10) || 0, LINES.length);
+        for (let i = 0; i < activeLines; i++) {
+            const pattern = LINES[i];
+            for (let c = 0; c < COLS; c++) {
+                const r = pattern[c];
+                const dot = previewEl.querySelector(`.dot2[data-row="${r}"][data-col="${c}"]`);
+                if (dot) dot.classList.add("path");
+            }
+        }
+    }
+
+    // Basic balance/validation check used by startSpin()
+    function canAffordSpin(totalBetCurrency) {
+        if (!(totalBetCurrency > 0)) {
+            setMessage("Pick at least 1 line and a positive bet.", "muted");
+            return false;
+        }
+        if (balance < totalBetCurrency) {
+            setMessage(`Insufficient credit for $${totalBetCurrency.toFixed(2)} spin.`, "muted");
+            return false;
+        }
+        return true;
+    }
+
     // ----- EVENTS -----
     if (spinBtn) spinBtn.addEventListener("click", startSpin);
 
@@ -293,7 +349,7 @@
     });
 
     if (linesEl) linesEl.addEventListener("change", () => {
-        updateLinesPreview();
+        buildLinesPreview();
         updateTotalBetUI();
     });
 
@@ -387,12 +443,13 @@
     // SECONDARY TIP
     function appendSecondaryTip(text) {
         if (!msgEl) return;
+
         let tip2 = document.getElementById("message2");
         if (!tip2) {
             tip2 = document.createElement("div");
             tip2.id = "message2";
-            tip2.className = "message muted";
-            msgEl.insertAdjacentElement("afterend", tip2);
+            tip2.className = "muted";
+            msgEl.appendChild(tip2);
         }
         tip2.textContent = text;
     }
@@ -402,7 +459,7 @@
     initReels();
     buildLinesPreview();
     updateTotalBetUI();
-    setMessage("Tip: press Space or Enter/Return to spin; press again to stop.", "muted");
-    appendSecondaryTip("hello");
+    setMessage("TIP: press space or enter/return to spin; press again to stop.", "muted");
+    appendSecondaryTip("GOOD LUCK!");
 
 })();

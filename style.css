@@ -53,7 +53,7 @@ body {
     gap: 10px;
     margin: 0 0 8px 0;
     letter-spacing: .4px;
-    color: #fff;
+    color: #ffffff;
     text-shadow:
         0 0 5px #39ff14,
         0 0 10px #39ff14,
@@ -113,10 +113,9 @@ body {
     box-shadow: 0 0 10px var(--accent2), 0 0 20px var(--accent2);
 }
 
-
 .info-popup {
     background: rgba(0, 0, 0, .9);
-    color: var(--text);
+    color: #fff;
     border: 1px solid var(--accent2);
     border-radius: 8px;
     padding: 10px;
@@ -126,7 +125,6 @@ body {
     font-size: 13px;
     box-shadow: 0 0 12px rgba(165, 255, 125, .5);
 }
-
 
 .cell {
     display: flex;
@@ -227,19 +225,23 @@ button[disabled] {
 
 button:focus-visible,
 .info-btn:focus-visible {
-  outline: 2px solid var(--accent2);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 3px rgba(165,255,125,.25);
+    outline: 2px solid var(--accent2);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(165, 255, 125, .25);
 }
 
 .muted {
     color: var(--muted);
+    font-size: 10pt;
+    font-weight: 300;
 }
 
 .message {
+    color: var(--muted);
     margin-top: 10px;
     min-height: 22px;
-    font-weight: 600;
+    font-size: 10pt;
+    font-weight: 300;
     text-shadow: 0 0 18px rgba(125, 249, 255, .35);
 }
 
@@ -292,6 +294,17 @@ button:focus-visible,
     border-radius: 4px;
     background: linear-gradient(180deg, #1e2a4f, #0e1526);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06);
+}
+
+/* Line preview states */
+.dot2.active {
+    opacity: .45;
+}
+
+.dot2.path {
+    background: var(--accent2) !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .12), 0 0 10px var(--accent2) !important;
+    opacity: 1 !important;
 }
 
 .footer {
