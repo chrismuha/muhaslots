@@ -120,6 +120,8 @@ body {
     border: 1px solid var(--accent2);
     border-radius: 8px;
     padding: 10px;
+    position: relative;
+    z-index: 2;
     margin-top: 8px;
     font-size: 13px;
     box-shadow: 0 0 12px rgba(165, 255, 125, .5);
@@ -221,6 +223,13 @@ button[disabled] {
     cursor: not-allowed;
     filter: grayscale(.3);
     box-shadow: none;
+}
+
+button:focus-visible,
+.info-btn:focus-visible {
+  outline: 2px solid var(--accent2);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(165,255,125,.25);
 }
 
 .muted {
