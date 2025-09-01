@@ -408,19 +408,29 @@
     });
 
     // ----- INFO BUTTON -----
-    const payInfoBtn = document.getElementById("payInfo");
-    const payInfoPopup = document.getElementById("payInfoPopup");
+    const btn = document.getElementById("payInfo");
+    const pop = document.getElementById("payInfoPopup");
 
-    if (payInfoBtn && payInfoPopup) {
-        payInfoBtn.addEventListener("click", () => {
-            const isHidden = payInfoPopup.hasAttribute("hidden");
-            if (isHidden) {
-                payInfoPopup.removeAttribute("hidden");
+    if (btn && pop) {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const hidden = pop.hasAttribute("hidden");
+            if (hidden) {
+                pop.removeAttribute("hidden");
+                btn.setAttribute("aria-expanded", "true");
             } else {
-                payInfoPopup.setAttribute("hidden", "");
+                pop.setAttribute("hidden", "");
+                btn.setAttribute("aria-expanded", "false");
+            }
+        });
+        document.addEventListener("click", (e) => {
+            if (!pop.hasAttribute("hidden") && e.target !== btn && !pop.contains(e.target)) {
+                pop.setAttribute("hidden", "");
+                btn.setAttribute("aria-expanded", "false");
             }
         });
     }
+
     // Close popup if clicking outside of it
     document.addEventListener("click", (e) => {
         if (payInfoPopup && !payInfoPopup.hasAttribute("hidden")) {
