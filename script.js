@@ -407,11 +407,34 @@
         }
     });
 
+    // ----- INFO BUTTON -----
+    const payInfoBtn = document.getElementById("payInfo");
+    const payInfoPopup = document.getElementById("payInfoPopup");
+
+    if (payInfoBtn && payInfoPopup) {
+        payInfoBtn.addEventListener("click", () => {
+            const isHidden = payInfoPopup.hasAttribute("hidden");
+            if (isHidden) {
+                payInfoPopup.removeAttribute("hidden");
+            } else {
+                payInfoPopup.setAttribute("hidden", "");
+            }
+        });
+    }
+    // Close popup if clicking outside of it
+    document.addEventListener("click", (e) => {
+        if (payInfoPopup && !payInfoPopup.hasAttribute("hidden")) {
+            if (!payInfoPopup.contains(e.target) && e.target !== payInfoBtn) {
+                payInfoPopup.setAttribute("hidden", "");
+            }
+        }
+    });
+
     // ----- INIT -----
     updateBalanceUI();
     initReels();
     buildLinesPreview();
     updateTotalBetUI();
-    setMessage("Tip: press Space or Enter to spin; press again to stop.", "muted");
+    setMessage("Tip: press Space or Enter/Return to spin; press again to stop.", "muted");
 
 })();
