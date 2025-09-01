@@ -82,12 +82,14 @@ body {
 .reels {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 12px;
-    height: min(56vh, 420px);
+    gap: 6px;
+    height: auto;
     min-height: 320px;
     border-radius: 10px;
     overflow: hidden;
     position: relative;
+    align-content: center;
+    grid-auto-rows: min-content;
 }
 
 .info-btn {
@@ -130,6 +132,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    line-height: 1;
     font-size: clamp(36px, 6.5vmin, 54px);
     background: rgba(255, 255, 255, .02);
     border-radius: 8px;
@@ -141,7 +144,7 @@ body {
 
 .cell.win {
     background: rgba(255, 230, 109, .12);
-    box-shadow: inset 0 0 0 2px rgba(255, 230, 109, .8), 0 0 30px rgba(255, 230, 109, .25);
+    box-shadow: inset 0 0 0 2px #39ff14cc, 0 0 30px rgba(255, 230, 109, .25);
     transform: scale(1.03);
 }
 
@@ -206,6 +209,27 @@ button {
     box-shadow: 0 10px 30px rgba(125, 249, 255, .35);
     transition: .06s, filter .2s, box-shadow .2s;
     min-width: 120px;
+}
+
+button.info-btn {
+    min-width: 22px;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    text-transform: none;
+    overflow: hidden;
+}
+
+button.info-btn>.icon-container {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--accent2) !important;
+    color: #0b0f17;
 }
 
 button:hover {
@@ -323,6 +347,22 @@ button:focus-visible,
     align-items: center;
 }
 
+.icon-btn {
+    min-width: 0;
+    padding: 8px 10px;
+    border-radius: 10px;
+}
+
+.reels .icon-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent2);
+    color: #0b0f17;
+    padding: 6px 10px;
+    border-radius: 8px;
+}
+
 #creditStep {
     width: 90px;
     padding: 8px 10px;
@@ -349,10 +389,4 @@ button:focus-visible,
     min-width: 80px;
     font-family: monospace;
     text-align: right;
-}
-
-.icon-btn {
-    min-width: 0;
-    padding: 8px 10px;
-    border-radius: 10px;
 }
