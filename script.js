@@ -1,9 +1,8 @@
-// script.js — Neon Slots (with .reels .icon-container fix)
-
 // Config
+
 const SYMBOLS = ["💎", "🍀", "⭐", "🔔", "🍋", "🍒"];
 
-// Simple weights (tune as desired; higher = more common)
+// Weights (higher = more common)
 const WEIGHTS = {
     "💎": 1,
     "🍀": 3,
@@ -13,7 +12,7 @@ const WEIGHTS = {
     "🍒": 8,
 };
 
-// Paytable (multipliers) for 3, 4, 5 in-a-row starting from left
+// Paytable (multipliers) for 3/4/5 in a row from the left
 const PAYTABLE = {
     "💎": { 3: 50, 4: 200, 5: 1000 },
     "🍀": { 3: 20, 4: 100, 5: 400 },
@@ -23,23 +22,27 @@ const PAYTABLE = {
     "🍒": { 3: 2, 4: 6, 5: 30 },
 };
 
-// 5x3 layout, 10 paylines (row indices per reel column)
-const ROWS = 3;
+// ---->>> CHANGED: 5 rows now
+const ROWS = 5;
 const COLS = 5;
+
+// 10 paylines for a 5-row machine (row indices 0..4)
 const PAYLINES = [
-    [1, 1, 1, 1, 1], // 1 middle
+    [2, 2, 2, 2, 2], // 1 middle
     [0, 0, 0, 0, 0], // 2 top
-    [2, 2, 2, 2, 2], // 3 bottom
-    [0, 1, 2, 1, 0], // 4 V
-    [2, 1, 0, 1, 2], // 5 inverted V
-    [0, 0, 1, 0, 0], // 6 small bump
-    [2, 2, 1, 2, 2], // 7 small dip
-    [1, 0, 1, 2, 1], // 8 zigzag
-    [1, 2, 1, 0, 1], // 9 zigzag
-    [0, 1, 1, 1, 2], // 10 diagonal-ish
+    [4, 4, 4, 4, 4], // 3 bottom
+    [1, 1, 1, 1, 1], // 4 upper-mid
+    [3, 3, 3, 3, 3], // 5 lower-mid
+    [0, 1, 2, 3, 4], // 6 diagonal down
+    [4, 3, 2, 1, 0], // 7 diagonal up
+    [1, 2, 3, 2, 1], // 8 V around center
+    [0, 1, 0, 1, 0], // 9 small wave near top
+    [4, 3, 4, 3, 4], // 10 small wave near bottom
 ];
 
+
 // DOM
+
 const reelsEl = document.getElementById("reels");
 const messageEl = document.getElementById("message");
 const balanceEl = document.getElementById("balance");
@@ -56,18 +59,22 @@ const payInfoBtn = document.getElementById("payInfo");
 const payInfoPopup = document.getElementById("payInfoPopup");
 const linesPreviewEl = document.getElementById("linesPreview");
 
+
 // State
-let balance = 100.00; // starting balance
+
+let balance = 100.0;
 let isSpinning = false;
 
+
 // Utilities
+
 function fmtUSD(n) {
     return `$${n.toFixed(2)}`;
 }
 
 function choiceWeighted(weightsMap) {
     const entries = Object.entries(weightsMap);
-    const total = entries.reduce((sum, [, w]) => sum + w, 0);
+    const total = entries.reduce((s, [, w]) => s + w, 0);
     let r = Math.random() * total;
     for (const [sym, w] of entries) {
         if ((r -= w) <= 0) return sym;
@@ -103,7 +110,7 @@ function createCell(symbol, isWinning = false) {
     const cell = document.createElement("div");
     cell.className = "cell";
     if (isWinning) cell.classList.add("win");
-    // IMPORTANT: reel symbols wrapped to use .reels .icon-container (green chip)
+    // Reel symbols wrapped to pick up .reels .icon-container (green chip)
     cell.innerHTML = `<span class="icon-container" aria-hidden="true">${symbol}</span>`;
     cell.setAttribute("role", "img");
     cell.setAttribute("aria-label", `Symbol ${symbol}`);
@@ -123,14 +130,14 @@ function renderGrid(grid, winningPositions = new Set()) {
 }
 
 function spinOnce() {
-    // generate a 3x5 grid
-    const grid = Array.from({ length: ROWS }, () =>
+    // produce ROWS x COLS
+    return Array.from({ length: ROWS }, () =>
         Array.from({ length: COLS }, () => choiceWeighted(WEIGHTS))
     );
     return grid;
 }
 
-// Returns { totalWinUSD, lineWins: [{lineIndex, count, symbol, winUSD}], winningPositions: Set<string> }
+// Returns { totalWinUSD, lineWins: [...], winningPositions: Set<string> }
 function evaluateGrid(grid) {
     const linesActive = parseInt(linesEl.value, 10);
     const betPerLine = parseFloat(betEl.value);
@@ -149,11 +156,8 @@ function evaluateGrid(grid) {
         let count = 1;
         for (let col = 1; col < COLS; col++) {
             const row = path[col];
-            if (grid[row][col] === firstSym) {
-                count++;
-            } else {
-                break;
-            }
+            if (grid[row][col] === firstSym) count++;
+            else break;
         }
 
         if (count >= 3 && PAYTABLE[firstSym]?.[count]) {
@@ -182,19 +186,19 @@ function animateSpin(durationMs = 600) {
             Array.from({ length: COLS }, () => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)])
         );
         renderGrid(grid);
-        if (t - start < durationMs) {
-            requestAnimationFrame(frame);
-        }
+        if (t - start < durationMs) requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
 }
 
-// Lines Preview
-function renderLinesPreview() {
-    linesPreviewEl.innerHTML = "";
-    const active = parseInt(linesEl.value, 10);
 
-    // Build 3x5 grid
+// Lines Preview (now 5 rows)
+function renderLinesPreview() {
+    if (!linesPreviewEl) return;
+    const active = parseInt(linesEl.value, 10);
+    linesPreviewEl.innerHTML = "";
+
+    // Always render ROWS x COLS (5x5) dots; highlight those touched by active lines
     for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLS; col++) {
             const dot = document.createElement("div");
@@ -204,11 +208,10 @@ function renderLinesPreview() {
             for (let li = 0; li < active; li++) {
                 const path = PAYLINES[li];
                 if (path[col] === row) {
-                    dot.classList.add("path"); // highlight this dot
+                    dot.classList.add("path");
                     break;
                 }
             }
-
             linesPreviewEl.appendChild(dot);
         }
     }
@@ -234,8 +237,7 @@ function handleEsc(e) {
     }
 }
 
-// Credit step controls (▲ ▼)
-// Adjust the "Bet per line" by the step amount
+// Credit step controls (▲ / ▼)
 function getCreditStep() {
     const v = parseFloat(creditStepEl.value);
     return isNaN(v) ? 1 : v;
@@ -294,7 +296,7 @@ async function doSpin() {
 }
 
 function doMaxBet() {
-    // Choose highest bet-per-line & lines
+    // Max lines stays at 10 (matches PAYLINES length)
     betEl.value = Array.from(betEl.options).reduce((max, o) =>
         parseFloat(o.value) > parseFloat(max.value) ? o : max
     ).value;
@@ -325,18 +327,14 @@ payInfoBtn.addEventListener("click", () => togglePayInfo());
 document.addEventListener("click", handleDocumentClick);
 document.addEventListener("keydown", handleEsc);
 
-// Keyboard shortcuts: ArrowUp/Down adjust bet
+// Keyboard shortcuts
 document.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowUp") {
-        e.preventDefault(); incBet(+1);
-    } else if (e.key === "ArrowDown") {
-        e.preventDefault(); incBet(-1);
-    }
+    if (e.key === "ArrowUp") { e.preventDefault(); incBet(+1); }
+    else if (e.key === "ArrowDown") { e.preventDefault(); incBet(-1); }
 });
 
 // Init
 (function init() {
-    // Initial blank grid to show layout
     const grid = Array.from({ length: ROWS }, () =>
         Array.from({ length: COLS }, () => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)])
     );
@@ -348,3 +346,26 @@ document.addEventListener("keydown", (e) => {
     payInfoPopup.hidden = true;
     payInfoBtn.setAttribute("aria-expanded", "false");
 })();
+
+// Render Payout Table automatically
+function renderPayoutTable() {
+    const table = document.querySelector('.paytable .table');
+    if (!table) return;
+    table.innerHTML = `
+    <div class="head">Symbol</div>
+    <div class="head">3</div>
+    <div class="head">4</div>
+    <div class="head">5</div>
+  `;
+    const order = ["💎", "🍀", "⭐", "🔔", "🍋", "🍒"]; // match UI order
+    for (const sym of order) {
+        const p = PAYTABLE[sym];
+        table.insertAdjacentHTML(
+            'beforeend',
+            `<div><span class="icon-container">${sym}</span></div>
+       <div>${p[3]}</div>
+       <div>${p[4]}</div>
+       <div>${p[5]}</div>`
+        );
+    }
+}

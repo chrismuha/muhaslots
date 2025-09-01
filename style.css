@@ -320,7 +320,6 @@ button:focus-visible,
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06);
 }
 
-/* Line preview states */
 .dot2.active {
     opacity: .45;
 }
