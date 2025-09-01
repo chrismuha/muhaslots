@@ -268,7 +268,18 @@ button[disabled] {
 
 #balance {
     display: inline-block;
-    min-width: 80px;  /* reserve space */
+    min-width: 80px;
+    font-family: monospace;
+    text-align: right;
+}
+
+#denom {
+    min-width: 110px;
+}
+
+#totalBet {
+    display: inline-block;
+    min-width: 80px;
     font-family: monospace;
     text-align: right;
 }

@@ -38,11 +38,13 @@
     const reelsEl = $("#reels");
     const balEl = $("#balance");
     const linesEl = $("#lines");
-    const betEl = $("#bet");
+    const betEl = $("#bet");                 // bet per line in CREDITS (1,2,5,…)
     const spinBtn = $("#spin");
     const maxBtn = $("#max");
     const msgEl = $("#message");
     const previewEl = $("#linesPreview");
+    const denomEl = $("#denom");             // denomination ($ per credit) selector
+    const totalBetEl = $("#totalBet");       // live total bet readout in $
 
     // Credit controls (already in HTML)
     const creditStepEl = $("#creditStep");
@@ -50,9 +52,10 @@
     const creditDownBtn = $("#creditDown");
 
     // ----- STATE -----
-    let balance = 100.00;
+    let balance = 100.00;   // stored in currency ($)
     let spinning = false;
-    let creditStep = 1.00;
+    let creditStep = 1.00;  // add/remove currency ($) via ▲/▼ or buttons
+    let denomination = 0.25; // $ per credit (must match HTML default if present)
 
     // spin/stop machinery
     let rollInterval = null;   // setInterval for rolling animation
@@ -66,6 +69,12 @@
 
         const savedStep = localStorage.getItem("neon-slots-credit-step");
         if (savedStep) creditStep = Math.max(0, parseFloat(savedStep)) || 1;
+
+        const savedDenom = localStorage.getItem("neon-slots-denom");
+        if (savedDenom) {
+            const d = parseFloat(savedDenom);
+            if (Number.isFinite(d) && d > 0) denomination = d;
+        }
     } catch { }
 
     // ----- UI HELPERS -----
@@ -75,18 +84,32 @@
     }
 
     function updateBalanceUI() {
-        balEl.textContent = `$${balance.toFixed(2)}`;
+        if (balEl) balEl.textContent = `$${balance.toFixed(2)}`;
+    }
+
+    function updateTotalBetUI() {
+        if (!totalBetEl || !linesEl || !betEl) return;
+        const lines = parseInt(linesEl.value, 10) || 0;
+        const betPerLineCredits = parseFloat(betEl.value) || 0;
+        const totalBetCurrency = lines * betPerLineCredits * denomination; // $ cost
+        totalBetEl.textContent = `$${totalBetCurrency.toFixed(2)}`;
     }
 
     function saveBalance() {
         try { localStorage.setItem("neon-slots-balance", String(balance)); } catch { }
     }
 
-    function adjustBalance(delta) {
-        balance = Math.max(0, balance + delta);
+    function saveDenomination() {
+        try { localStorage.setItem("neon-slots-denom", String(denomination)); } catch { }
+    }
+
+    function adjustBalance(deltaCurrency) {
+        balance = Math.max(0, balance + deltaCurrency);
         updateBalanceUI();
         saveBalance();
-        setMessage(delta >= 0 ? `Added $${Math.abs(delta).toFixed(2)} to credit.` : `Removed $${Math.abs(delta).toFixed(2)} from credit.`, "muted");
+        setMessage(deltaCurrency >= 0
+            ? `Added $${Math.abs(deltaCurrency).toFixed(2)} to credit.`
+            : `Removed $${Math.abs(deltaCurrency).toFixed(2)} from credit.`, "muted");
     }
 
     // ----- RNG & GRID -----
@@ -145,7 +168,8 @@
     }
 
     // ----- EVALUATION -----
-    function evaluate(grid, activeLines, betPerLine) {
+    // Returns { totalWin, wins }, where values are in CREDITS
+    function evaluate(grid, activeLines, betPerLineCredits) {
         const wins = [];
         let totalWin = 0;
 
@@ -158,10 +182,10 @@
                 else break;
             }
             if (count >= 3) {
-                const payout = (PAY[first]?.[count] || 0) * betPerLine;
-                if (payout > 0) {
-                    totalWin += payout;
-                    wins.push({ line: i + 1, symbol: first, count, payout });
+                const payoutCredits = (PAY[first]?.[count] || 0) * betPerLineCredits;
+                if (payoutCredits > 0) {
+                    totalWin += payoutCredits;
+                    wins.push({ line: i + 1, symbol: first, count, payout: payoutCredits });
                 }
             }
         }
@@ -208,12 +232,12 @@
     }
 
     // ----- SPIN / STOP (keyboard toggled) -----
-    function canAffordSpin(totalBet) {
-        if (!Number.isFinite(totalBet) || totalBet <= 0) {
+    function canAffordSpin(totalBetCurrency) {
+        if (!Number.isFinite(totalBetCurrency) || totalBetCurrency <= 0) {
             setMessage("Select a valid bet.", "muted");
             return false;
         }
-        if (totalBet > balance) {
+        if (totalBetCurrency > balance) {
             setMessage("Insufficient balance for that bet.", "muted");
             return false;
         }
@@ -224,23 +248,25 @@
         if (spinning) return;
 
         const lines = parseInt(linesEl.value, 10);
-        const betPerLine = parseFloat(betEl.value);
-        const totalBet = lines * betPerLine;
+        const betPerLineCredits = parseFloat(betEl.value);
+        const totalBetCurrency = lines * betPerLineCredits * denomination;
 
-        if (!canAffordSpin(totalBet)) return;
+        if (!canAffordSpin(totalBetCurrency)) return;
 
         clearWins();
         setMessage("");
 
-        balance -= totalBet;
+        balance -= totalBetCurrency; // deduct in $
         updateBalanceUI();
         saveBalance();
+        updateTotalBetUI();
 
         spinning = true;
         spinBtn.disabled = true;
         maxBtn.disabled = true;
         linesEl.disabled = true;
         betEl.disabled = true;
+        if (denomEl) denomEl.disabled = true;
 
         // Precompute the final outcome
         const next = makeGrid();
@@ -251,21 +277,19 @@
         }, 80);
 
         // Auto-finalize after a duration if not manually stopped
-        spinTimer = setTimeout(() => finalizeSpin(next, lines, betPerLine), SPIN_DURATION_MS);
+        spinTimer = setTimeout(() => finalizeSpin(next, lines, betPerLineCredits), SPIN_DURATION_MS);
     }
 
     function stopSpinEarly() {
-        // If we have a pending finalize, run it now with a fresh outcome
         if (!spinning) return;
         const lines = parseInt(linesEl.value, 10);
-        const betPerLine = parseFloat(betEl.value);
+        const betPerLineCredits = parseFloat(betEl.value);
 
-        // Clear the auto timer and finalize immediately with a generated grid
         if (spinTimer) { clearTimeout(spinTimer); spinTimer = null; }
-        finalizeSpin(makeGrid(), lines, betPerLine);
+        finalizeSpin(makeGrid(), lines, betPerLineCredits);
     }
 
-    function finalizeSpin(finalGrid, lines, betPerLine) {
+    function finalizeSpin(finalGrid, lines, betPerLineCredits) {
         if (rollInterval) {
             clearInterval(rollInterval);
             rollInterval = null;
@@ -277,17 +301,18 @@
 
         setGrid(finalGrid);
 
-        const { totalWin, wins } = evaluate(finalGrid, lines, betPerLine);
+        const { totalWin, wins } = evaluate(finalGrid, lines, betPerLineCredits); // credits
 
         if (wins.length) {
             for (const w of wins) highlightLineCells(w.line - 1, w.count);
         }
 
-        if (totalWin > 0) {
-            balance += totalWin;
+        const totalWinCurrency = totalWin * denomination; // convert to $
+        if (totalWinCurrency > 0) {
+            balance += totalWinCurrency;
             updateBalanceUI();
-            const parts = wins.map(w => `${w.symbol} x${w.count} (L${w.line}) = $${w.payout.toFixed(2)}`);
-            setMessage(`You won $${totalWin.toFixed(2)} — ${parts.join(" • ")}`, "win");
+            const parts = wins.map(w => `${w.symbol} x${w.count} (L${w.line}) = $${(w.payout * denomination).toFixed(2)}`);
+            setMessage(`You won $${totalWinCurrency.toFixed(2)} — ${parts.join(" • ")}`, "win");
         } else {
             setMessage("No win. Try again!", "muted");
         }
@@ -299,10 +324,12 @@
         maxBtn.disabled = false;
         linesEl.disabled = false;
         betEl.disabled = false;
+        if (denomEl) denomEl.disabled = false;
+
+        updateTotalBetUI();
     }
 
     // ----- EVENTS -----
-    // Spin button keeps its original behavior: only starts a spin
     if (spinBtn) spinBtn.addEventListener("click", startSpin);
 
     if (maxBtn) maxBtn.addEventListener("click", () => {
@@ -317,10 +344,37 @@
         linesEl.value = String(Math.max(...lineOptions));
 
         updateLinesPreview();
+        updateTotalBetUI();
         setMessage("Max lines & bet selected.", "muted");
     });
 
-    if (linesEl) linesEl.addEventListener("change", updateLinesPreview);
+    if (linesEl) linesEl.addEventListener("change", () => {
+        updateLinesPreview();
+        updateTotalBetUI();
+    });
+
+    if (betEl) betEl.addEventListener("change", updateTotalBetUI);
+
+    // Denomination selector
+    if (denomEl) {
+        // If HTML has preset, sync it; else set the control to state
+        const htmlVal = parseFloat(denomEl.value);
+        if (Number.isFinite(htmlVal) && htmlVal > 0) denomination = htmlVal;
+        else denomEl.value = String(denomination.toFixed(2));
+
+        denomEl.addEventListener("change", () => {
+            const v = parseFloat(denomEl.value);
+            if (Number.isFinite(v) && v > 0) {
+                denomination = v;
+                saveDenomination();
+                setMessage(`Denomination set to $${denomination.toFixed(2)} per credit.`, "muted");
+                updateTotalBetUI();
+            } else {
+                setMessage("Invalid denomination.", "muted");
+                denomEl.value = String(denomination.toFixed(2));
+            }
+        });
+    }
 
     // Credit controls
     if (creditStepEl) {
@@ -357,6 +411,7 @@
     updateBalanceUI();
     initReels();
     buildLinesPreview();
+    updateTotalBetUI();
     setMessage("Tip: press Space or Enter to spin; press again to stop.", "muted");
 
 })();
