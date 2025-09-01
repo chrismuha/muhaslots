@@ -16,11 +16,10 @@
         "🍒": { 3: 2, 4: 6, 5: 30 }
     };
 
-    // 10 paylines (index 0..9 => lines 1..10)
     const LINES = [
-        [1, 1, 1, 1, 1], // middle
-        [0, 0, 0, 0, 0], // top
-        [2, 2, 2, 2, 2], // bottom
+        [1, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0],
+        [2, 2, 2, 2, 2],
         [0, 1, 2, 1, 0],
         [2, 1, 0, 1, 2],
         [0, 0, 1, 0, 0],
@@ -38,13 +37,13 @@
     const reelsEl = $("#reels");
     const balEl = $("#balance");
     const linesEl = $("#lines");
-    const betEl = $("#bet");                 // bet per line in CREDITS (1,2,5,…)
+    const betEl = $("#bet");
     const spinBtn = $("#spin");
     const maxBtn = $("#max");
     const msgEl = $("#message");
     const previewEl = $("#linesPreview");
-    const denomEl = $("#denom");             // denomination ($ per credit) selector
-    const totalBetEl = $("#totalBet");       // live total bet readout in $
+    const denomEl = $("#denom");
+    const totalBetEl = $("#totalBet");
 
     // Credit controls (already in HTML)
     const creditStepEl = $("#creditStep");
@@ -52,10 +51,10 @@
     const creditDownBtn = $("#creditDown");
 
     // ----- STATE -----
-    let balance = 100.00;   // stored in currency ($)
+    let balance = 100.00;
     let spinning = false;
-    let creditStep = 1.00;  // add/remove currency ($) via ▲/▼ or buttons
-    let denomination = 0.25; // $ per credit (must match HTML default if present)
+    let creditStep = 1.00;
+    let denomination = 0.25;
 
     // spin/stop machinery
     let rollInterval = null;   // setInterval for rolling animation
@@ -193,57 +192,6 @@
     }
 
     // ----- LINES PREVIEW -----
-    function buildLinesPreview() {
-        if (!previewEl) return;
-        previewEl.innerHTML = "";
-        for (let i = 0; i < LINES.length; i++) {
-            for (let c = 0; c < COLS; c++) {
-                const dot = document.createElement("div");
-                dot.className = "dot2";
-                dot.dataset.line = String(i + 1);
-                dot.dataset.col = String(c);
-                dot.dataset.path = LINES[i][c].toString();
-                previewEl.appendChild(dot);
-            }
-        }
-        updateLinesPreview();
-    }
-
-    function updateLinesPreview() {
-        if (!previewEl) return;
-        const active = parseInt(linesEl.value, 10);
-        const dots = $$(".dot2", previewEl);
-        for (const dot of dots) {
-            const line = parseInt(dot.dataset.line, 10);
-            const col = parseInt(dot.dataset.col, 10);
-            const isActive = line <= active;
-            const pathRow = parseInt(dot.dataset.path, 10);
-            const isPath = isActive && LINES[line - 1][col] === pathRow;
-            if (isPath) {
-                dot.style.background = "var(--accent2)";
-                dot.style.boxShadow = "0 0 0 1px rgba(255,255,255,.12), 0 0 10px var(--accent2)";
-                dot.style.opacity = "1";
-            } else {
-                dot.style.background = "linear-gradient(180deg, #1e2a4f, #0e1526)";
-                dot.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,.06)";
-                dot.style.opacity = isActive ? ".45" : ".2";
-            }
-        }
-    }
-
-    // ----- SPIN / STOP (keyboard toggled) -----
-    function canAffordSpin(totalBetCurrency) {
-        if (!Number.isFinite(totalBetCurrency) || totalBetCurrency <= 0) {
-            setMessage("Select a valid bet.", "muted");
-            return false;
-        }
-        if (totalBetCurrency > balance) {
-            setMessage("Insufficient balance for that bet.", "muted");
-            return false;
-        }
-        return true;
-    }
-
     function startSpin() {
         if (spinning) return;
 
@@ -268,15 +216,12 @@
         betEl.disabled = true;
         if (denomEl) denomEl.disabled = true;
 
-        // Precompute the final outcome
         const next = makeGrid();
 
-        // Rolling animation: keep showing random grids until finalized/stopped
         rollInterval = setInterval(() => {
             setGrid(makeGrid());
         }, 80);
 
-        // Auto-finalize after a duration if not manually stopped
         spinTimer = setTimeout(() => finalizeSpin(next, lines, betPerLineCredits), SPIN_DURATION_MS);
     }
 
@@ -301,13 +246,13 @@
 
         setGrid(finalGrid);
 
-        const { totalWin, wins } = evaluate(finalGrid, lines, betPerLineCredits); // credits
+        const { totalWin, wins } = evaluate(finalGrid, lines, betPerLineCredits);
 
         if (wins.length) {
             for (const w of wins) highlightLineCells(w.line - 1, w.count);
         }
 
-        const totalWinCurrency = totalWin * denomination; // convert to $
+        const totalWinCurrency = totalWin * denomination;
         if (totalWinCurrency > 0) {
             balance += totalWinCurrency;
             updateBalanceUI();
@@ -333,7 +278,6 @@
     if (spinBtn) spinBtn.addEventListener("click", startSpin);
 
     if (maxBtn) maxBtn.addEventListener("click", () => {
-        // set to max of available options
         const betOptions = Array.from(betEl.querySelectorAll("option")).map(o => parseFloat(o.value));
         const maxBet = Math.max(...betOptions);
         betEl.value = String(maxBet);
@@ -355,9 +299,8 @@
 
     if (betEl) betEl.addEventListener("change", updateTotalBetUI);
 
-    // Denomination selector
+    // Denomination Selector
     if (denomEl) {
-        // If HTML has preset, sync it; else set the control to state
         const htmlVal = parseFloat(denomEl.value);
         if (Number.isFinite(htmlVal) && htmlVal > 0) denomination = htmlVal;
         else denomEl.value = String(denomination.toFixed(2));
@@ -376,7 +319,7 @@
         });
     }
 
-    // Credit controls
+    // Credit Controls
     if (creditStepEl) {
         creditStepEl.value = creditStep.toFixed(2);
         creditStepEl.addEventListener("input", () => {
@@ -407,11 +350,12 @@
         }
     });
 
-    // ----- INFO BUTTON -----
+    // INFO BUTTON / POPUP
     const btn = document.getElementById("payInfo");
     const pop = document.getElementById("payInfoPopup");
 
     if (btn && pop) {
+        // Toggle popup
         btn.addEventListener("click", (e) => {
             e.stopPropagation();
             const hidden = pop.hasAttribute("hidden");
@@ -423,28 +367,42 @@
                 btn.setAttribute("aria-expanded", "false");
             }
         });
+        // Close when clicking outside
         document.addEventListener("click", (e) => {
             if (!pop.hasAttribute("hidden") && e.target !== btn && !pop.contains(e.target)) {
                 pop.setAttribute("hidden", "");
                 btn.setAttribute("aria-expanded", "false");
             }
         });
+        // Close with Escape
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && !pop.hasAttribute("hidden")) {
+                pop.setAttribute("hidden", "");
+                btn.setAttribute("aria-expanded", "false");
+                btn.focus();
+            }
+        });
     }
 
-    // Close popup if clicking outside of it
-    document.addEventListener("click", (e) => {
-        if (payInfoPopup && !payInfoPopup.hasAttribute("hidden")) {
-            if (!payInfoPopup.contains(e.target) && e.target !== payInfoBtn) {
-                payInfoPopup.setAttribute("hidden", "");
-            }
+    // SECONDARY TIP
+    function appendSecondaryTip(text) {
+        if (!msgEl) return;
+        let tip2 = document.getElementById("message2");
+        if (!tip2) {
+            tip2 = document.createElement("div");
+            tip2.id = "message2";
+            tip2.className = "message muted";
+            msgEl.insertAdjacentElement("afterend", tip2);
         }
-    });
+        tip2.textContent = text;
+    }
 
-    // ----- INIT -----
+    // INIT
     updateBalanceUI();
     initReels();
     buildLinesPreview();
     updateTotalBetUI();
     setMessage("Tip: press Space or Enter/Return to spin; press again to stop.", "muted");
+    appendSecondaryTip("hello");
 
 })();
