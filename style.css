@@ -72,13 +72,6 @@ body {
         0 0 40px #39ff14;
 }
 
-.reels-wrap {
-    padding: 12px;
-    border-radius: 12px;
-    background: linear-gradient(180deg, #0e1424, #0b0f17);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06);
-}
-
 .reels {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -90,6 +83,41 @@ body {
     position: relative;
     align-content: center;
     grid-auto-rows: min-content;
+}
+
+.reels-wrap {
+    padding: 12px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #0e1424, #0b0f17);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06);
+}
+
+.reels .cell {
+    padding: 0;
+    background: transparent;
+    overflow: hidden;
+    box-shadow: none;
+}
+
+.reels .icon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    background: var(--accent2);
+    color: #0b0f17;
+    border-radius: inherit;
+    padding: 6px 0;
+    align-self: stretch;
+    justify-self: stretch;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent2)
+}
+
+.reels .cell.win .icon-container {
+    background: rgba(57, 255, 20, .12);
+    box-shadow: inset 0 0 0 2px #39ff14cc, 0 0 30px rgba(57, 255, 20, .25);
 }
 
 .info-btn {
@@ -350,16 +378,6 @@ button:focus-visible,
     min-width: 0;
     padding: 8px 10px;
     border-radius: 10px;
-}
-
-.reels .icon-container {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--accent2);
-    color: #0b0f17;
-    padding: 6px 10px;
-    border-radius: 8px;
 }
 
 #creditStep {
