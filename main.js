@@ -68,6 +68,7 @@ const linesEl = document.getElementById("lines");
 const betEl = document.getElementById("bet");
 const winOddsEl = document.getElementById("winOdds");
 const maxBetUsesAvailableCreditsEl = document.getElementById("maxBetUsesAvailableCredits");
+const skipWinAnimationDelayEl = document.getElementById("skipWinAnimationDelay");
 const creditStepEl = document.getElementById("creditStep");
 const allowFractionalCreditsEl = document.getElementById("allowFractionalCredits");
 const creditStepEffectEl = document.getElementById("creditStepEffect");
@@ -235,6 +236,10 @@ function updateCreditStepEffect() {
 
 function getAvailableCreditsBetUSD() {
     return clampBalanceUSD(balance);
+}
+
+function shouldSkipWinAnimationDelay() {
+    return Boolean(skipWinAnimationDelayEl?.checked);
 }
 
 function getNextInputValue(input, insertedText) {
@@ -1043,7 +1048,7 @@ async function runAutoSpin() {
         autoSpinRemaining += 1;
         updateAutoSpinHint();
 
-        if (result.totalWinUSD > 0 && !autoSpinStopRequested) {
+        if (result.totalWinUSD > 0 && !autoSpinStopRequested && !shouldSkipWinAnimationDelay()) {
             await new Promise((resolve) => setTimeout(resolve, 5000));
         }
     }
@@ -1212,6 +1217,7 @@ linesEl.addEventListener("change", onConfigChange);
 betEl.addEventListener("change", onConfigChange);
 winOddsEl?.addEventListener("change", onConfigChange);
 maxBetUsesAvailableCreditsEl?.addEventListener("change", onConfigChange);
+skipWinAnimationDelayEl?.addEventListener("change", updateAutoSpinHint);
 sessionStatDisplayEl?.addEventListener("change", updateSessionStatsVisibility);
 allowFractionalCreditsEl?.addEventListener("change", () => {
     syncCreditStepInput(creditStepEl.value);

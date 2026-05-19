@@ -65,12 +65,12 @@
                         <div class="select">
                             <label for="denom">Denomination (Value Per Credit):</label>
                             <select id="denom">
-                                <option value="0.01">$0.01</option>
+                                <option value="0.01" selected>$0.01</option>
                                 <option value="0.05">$0.05</option>
                                 <option value="0.10">$0.10</option>
                                 <option value="0.25">$0.25</option>
                                 <option value="0.50">$0.50</option>
-                                <option value="1.00" selected>$1.00</option>
+                                <option value="1.00">$1.00</option>
                                 <option value="2.00">$2.00</option>
                                 <option value="5.00">$5.00</option>
                                 <option value="10.00">$10.00</option>
@@ -98,12 +98,19 @@
                         <div class="select">
                             <label for="bet">Bet Per Line (credits)</label>
                             <select id="bet">
-                                <option value="1" selected>1</option>
+                                <option value="1">1</option>
                                 <option value="2">2</option>
-                                <option value="5">5</option>
+                                <option value="3">3</option>
+                                <option value="5" selected>5</option>
                                 <option value="10">10</option>
+                                <option value="15">15</option>
                                 <option value="20">20</option>
+                                <option value="25">25</option>
+                                <option value="30">30</option>
+                                <option value="40">40</option>
                                 <option value="50">50</option>
+                                <option value="75">75</option>
+                                <option value="100">100</option>
                             </select>
                         </div>
 
@@ -128,6 +135,14 @@
                                 <span>Max Bet uses available credits</span>
                             </label>
                             <p class="overlay-note">Uses your full current credits as the wager and may create cent-based bets.</p>
+                        </div>
+
+                        <div class="checkbox-setting">
+                            <label class="checkbox-row" for="skipWinAnimationDelay">
+                                <input id="skipWinAnimationDelay" type="checkbox" />
+                                <span>Skip winning highlight delay</span>
+                            </label>
+                            <p class="overlay-note">Auto spin continues immediately after wins while still showing the highlighted reels.</p>
                         </div>
                     </div>
 
@@ -181,6 +196,7 @@
                     <p class="overlay-note"><strong>Bet Per Line:</strong> Credits wagered on each active line. Increasing this raises both total bet and possible payout.</p>
                     <p class="overlay-note"><strong>Win Odds:</strong> Sets the target chance that a spin resolves as a win. Winning payout amounts still come from the paytable.</p>
                     <p class="overlay-note"><strong>Adjust Credit + ▲/▼:</strong> Sets how much credit to add/remove per click, scaled by denomination.</p>
+                    <p class="overlay-note"><strong>Skip Winning Highlight Delay:</strong> Removes the auto-spin pause after winning reels are highlighted.</p>
                     <p class="overlay-note"><strong>Spin:</strong> Plays one round using current settings and deducts the total bet first.</p>
                     <p class="overlay-note"><strong>Max Bet:</strong> Sets the highest bet per line and all 10 lines by default. If Max Bet uses available credits is enabled, it keeps your current lines and denomination, ignores the Bet Per Line dropdown, and spins all available credits as one custom wager.</p>
                     <h4>Definition: Bernoulli Trial</h4>
