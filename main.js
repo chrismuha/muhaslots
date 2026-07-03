@@ -70,7 +70,6 @@ const winOddsEl = document.getElementById("winOdds");
 const maxBetUsesAvailableCreditsEl = document.getElementById("maxBetUsesAvailableCredits");
 const skipWinAnimationDelayEl = document.getElementById("skipWinAnimationDelay");
 const creditStepEl = document.getElementById("creditStep");
-const allowFractionalCreditsEl = document.getElementById("allowFractionalCredits");
 const creditStepEffectEl = document.getElementById("creditStepEffect");
 const creditUpBtn = document.getElementById("creditUp");
 const creditDownBtn = document.getElementById("creditDown");
@@ -182,35 +181,20 @@ function clampBalanceUSD(value) {
     return roundUSD(Math.max(0, value));
 }
 
-function allowsFractionalCreditSteps() {
-    return Boolean(allowFractionalCreditsEl?.checked);
-}
-
 function syncCreditStepFieldMode() {
     if (!creditStepEl) return;
-    if (allowsFractionalCreditSteps()) {
-        creditStepEl.inputMode = "decimal";
-        creditStepEl.pattern = "^(?:0?\\.\\d{1,2}|[1-9]\\d*(?:\\.\\d{1,2})?)$";
-        return;
-    }
     creditStepEl.inputMode = "numeric";
     creditStepEl.pattern = "[1-9][0-9]*";
 }
 
 function isValidCreditStepValue(rawValue) {
     const value = String(rawValue ?? "").trim();
-    if (allowsFractionalCreditSteps()) {
-        return /^(?:0?\.\d{1,2}|[1-9]\d*(?:\.\d{1,2})?)$/.test(value);
-    }
     return /^[1-9]\d*$/.test(value);
 }
 
 function isPotentialCreditStepValue(rawValue) {
     const value = String(rawValue ?? "").trim();
     if (value === "") return true;
-    if (allowsFractionalCreditSteps()) {
-        return /^(?:\d+)?(?:\.\d{0,2})?$/.test(value);
-    }
     return /^\d*$/.test(value);
 }
 
@@ -218,7 +202,6 @@ function normalizeCreditStepValue(rawValue) {
     if (!isValidCreditStepValue(rawValue)) return 1;
     const parsed = Number.parseFloat(String(rawValue).trim());
     if (!Number.isFinite(parsed) || parsed <= 0) return 1;
-    if (allowsFractionalCreditSteps()) return roundUSD(parsed);
     return Math.max(1, Math.round(parsed));
 }
 
@@ -230,8 +213,8 @@ function formatCreditStepValue(value) {
 function updateCreditStepEffect() {
     if (!creditStepEffectEl || !creditStepEl) return;
     const creditStep = normalizeCreditStepValue(creditStepEl.value);
-    const dollarAmount = roundUSD(creditStep * getDenominationValue());
-    creditStepEffectEl.textContent = `Each arrow press: ${formatCreditStepValue(creditStep)} credit${creditStep === 1 ? "" : "s"} = ${fmtUSD(dollarAmount)}`;
+    const dollarAmount = roundUSD(creditStep / 100);
+    creditStepEffectEl.textContent = `Each arrow press: ${formatCreditStepValue(creditStep)} cent${creditStep === 1 ? "" : "s"} = ${fmtUSD(dollarAmount)}`;
 }
 
 function getAvailableCreditsBetUSD() {
@@ -985,8 +968,7 @@ function resetSessionState() {
 function adjustBalanceByCredits(creditDelta) {
     const step = normalizeCreditStepValue(creditStepEl.value);
     creditStepEl.value = formatCreditStepValue(step);
-    const denom = getDenominationValue();
-    balance = clampBalanceUSD(balance + roundUSD(step * denom * creditDelta));
+    balance = clampBalanceUSD(balance + roundUSD((step / 100) * creditDelta));
     updateTotals();
     updateRealtimeCreditMessage();
     syncLastChanceOverlayState();
@@ -1219,9 +1201,6 @@ winOddsEl?.addEventListener("change", onConfigChange);
 maxBetUsesAvailableCreditsEl?.addEventListener("change", onConfigChange);
 skipWinAnimationDelayEl?.addEventListener("change", updateAutoSpinHint);
 sessionStatDisplayEl?.addEventListener("change", updateSessionStatsVisibility);
-allowFractionalCreditsEl?.addEventListener("change", () => {
-    syncCreditStepInput(creditStepEl.value);
-});
 resetSessionBtn?.addEventListener("click", resetSessionState);
 
 bindRapidPress(creditUpBtn, () => adjustBalanceByCredits(1), { immediate: true });
