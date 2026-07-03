@@ -4,6 +4,7 @@
   "description": "Muha Slots is an online casino experience, with never before seen slots games. NO REAL MONEY",
   "main": "main.js",
   "scripts": {
+    "build": "node --check main.js",
     "test": "find . -name '*.js' -not -path './node_modules/*' -exec node --check {} \\;"
   },
   "private": true,

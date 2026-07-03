@@ -189,7 +189,8 @@ function syncCreditStepFieldMode() {
 
 function isValidCreditStepValue(rawValue) {
     const value = String(rawValue ?? "").trim();
-    return /^[1-9]\d*$/.test(value);
+    if (!/^[1-9]\d*$/.test(value)) return false;
+    return Number.parseInt(value, 10) % 25 === 0;
 }
 
 function isPotentialCreditStepValue(rawValue) {
@@ -199,9 +200,9 @@ function isPotentialCreditStepValue(rawValue) {
 }
 
 function normalizeCreditStepValue(rawValue) {
-    if (!isValidCreditStepValue(rawValue)) return 1;
+    if (!isValidCreditStepValue(rawValue)) return 100;
     const parsed = Number.parseFloat(String(rawValue).trim());
-    if (!Number.isFinite(parsed) || parsed <= 0) return 1;
+    if (!Number.isFinite(parsed) || parsed <= 0) return 100;
     return Math.max(1, Math.round(parsed));
 }
 
@@ -257,7 +258,7 @@ function syncCreditStepInput(rawValue) {
         updateCreditStepEffect();
         return;
     }
-    const fallbackValue = formatCreditStepValue(creditStepEl.dataset.lastValidValue || "1");
+    const fallbackValue = formatCreditStepValue(creditStepEl.dataset.lastValidValue || "100");
     creditStepEl.value = fallbackValue;
     creditStepEl.dataset.lastValidValue = fallbackValue;
     updateCreditStepEffect();
