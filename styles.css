@@ -811,10 +811,12 @@ button:focus-visible,
     min-width: 110px;
 }
 
-#totalBet {
+#totalBet,
+#creditsInserted {
     display: inline-block;
     min-width: 80px;
     font-family: monospace;
+    font-size: inherit;
     text-align: right;
 }
 
@@ -972,8 +974,29 @@ a.btn {
 }
 
 @media (max-width: 700px) {
+  html,
   body {
-    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .game {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  .game > *,
+  .card,
+  .reels-wrap,
+  .reels,
+  .hud,
+  .left,
+  .right {
+    max-width: 100%;
+    min-width: 0;
   }
 
   table {
@@ -991,10 +1014,10 @@ a.btn {
     right: auto;
     bottom: auto;
     left: auto;
-    width: 100vw !important;
+    width: 100% !important;
     min-height: 100dvh;
     height: auto !important;
-    max-width: none;
+    max-width: 100%;
     margin: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
