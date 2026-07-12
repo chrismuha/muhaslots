@@ -156,7 +156,7 @@ let sessionLossesUSD = 0;
 let netSessionWinningsUSD = 0;
 let netSessionLossesUSD = 0;
 let actualSessionNetUSD = 0;
-let creditsInsertedUSD = 0;
+let creditsInsertedUSD = INITIAL_CREDITS_USD;
 
 document.addEventListener("gesturestart", (e) => e.preventDefault());
 document.addEventListener("gesturechange", (e) => e.preventDefault());
@@ -1192,7 +1192,7 @@ function resetSessionState() {
     netSessionWinningsUSD = 0;
     netSessionLossesUSD = 0;
     actualSessionNetUSD = 0;
-    creditsInsertedUSD = 0;
+    creditsInsertedUSD = INITIAL_CREDITS_USD;
     resetCustomJackpotOdds();
     updateGameOddsDisplay();
 
