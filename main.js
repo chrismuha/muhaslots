@@ -1457,8 +1457,8 @@ JACKPOT_TIERS.forEach((tier) => {
         syncCustomJackpotOdds(tier);
         onConfigChange();
     });
-    document.getElementById(tier.winInputId)?.addEventListener("input", () => syncCustomJackpotOdds(tier, "win"));
-    document.getElementById(tier.lossInputId)?.addEventListener("input", () => syncCustomJackpotOdds(tier, "loss"));
+    document.getElementById(tier.winInputId)?.addEventListener("change", () => syncCustomJackpotOdds(tier, "win"));
+    document.getElementById(tier.lossInputId)?.addEventListener("change", () => syncCustomJackpotOdds(tier, "loss"));
 });
 maxBetUsesAvailableCreditsEl?.addEventListener("change", onConfigChange);
 skipWinAnimationDelayEl?.addEventListener("change", updateAutoSpinHint);
