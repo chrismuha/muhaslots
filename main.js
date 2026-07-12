@@ -301,15 +301,16 @@ function syncCustomJackpotOdds(tier, changedSide = null) {
     const lossInput = document.getElementById(tier.lossInputId);
     if (!select || !customRow || !winInput || !lossInput) return;
     customRow.hidden = select.value !== "custom";
-    if (select.value !== "custom" || !changedSide) return;
+    if (select.value !== "custom") return;
+    if (!changedSide) changedSide = "win";
     if (changedSide === "win") {
-        const win = Math.min(100, Math.max(0.001, Number.parseFloat(winInput.value) || 0.001));
+        const win = Math.min(100, Math.max(0.1, Math.round((Number.parseFloat(winInput.value) || 0.1) * 10) / 10));
         winInput.value = String(win);
-        lossInput.value = String(100 - win);
+        lossInput.value = String(Math.round((100 - win) * 10) / 10);
     } else {
-        const loss = Math.min(99.999, Math.max(0, Number.parseFloat(lossInput.value) || 0));
+        const loss = Math.min(99.9, Math.max(0, Math.round((Number.parseFloat(lossInput.value) || 0) * 10) / 10));
         lossInput.value = String(loss);
-        winInput.value = String(100 - loss);
+        winInput.value = String(Math.round((100 - loss) * 10) / 10);
     }
     updateGameOddsDisplay();
 }
