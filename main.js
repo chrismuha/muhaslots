@@ -833,20 +833,20 @@ function handleEsc(e) {
 
 function getSettingsDefinitions() {
     return [
-        { key: "adjustMoney", title: "Adjust Money", element: creditStepEl?.closest(".credit-controls") },
-        { key: "sessionStats", title: "Session Stats Display", element: sessionStatDisplayEl?.closest(".select") },
-        { key: "creditsInserted", title: "Credits Inserted", element: creditsInsertedEl?.closest(".stat") },
         { key: "denomination", title: "Denomination", element: denomEl?.closest(".select") },
         { key: "lines", title: "Lines", element: linesEl?.closest(".select") },
         { key: "bet", title: "Bet Per Line", element: betEl?.closest(".select") },
+        { key: "maxBetCredits", title: "Max Bet Credits", element: maxBetUsesAvailableCreditsEl?.closest(".checkbox-setting") },
+        { key: "adjustMoney", title: "Adjust Money", element: creditStepEl?.closest(".credit-controls") },
+        { key: "winDelay", title: "Winning Highlight Delay", element: skipWinAnimationDelayEl?.closest(".checkbox-setting") },
+        { key: "sessionStats", title: "Session Stats Display", element: sessionStatDisplayEl?.closest(".select") },
+        { key: "creditsInserted", title: "Credits Inserted", element: creditsInsertedEl?.closest(".stat") },
         { key: "winOdds", title: "Regular Win Odds", element: winOddsEl?.closest(".select") },
         ...JACKPOT_TIERS.map((tier) => ({
             key: `${tier.name.toLowerCase()}JackpotOdds`,
             title: `${tier.name} Jackpot Odds`,
             element: document.getElementById(tier.oddsElementId)?.closest(".select"),
         })),
-        { key: "maxBetCredits", title: "Max Bet Credits", element: maxBetUsesAvailableCreditsEl?.closest(".checkbox-setting") },
-        { key: "winDelay", title: "Winning Highlight Delay", element: skipWinAnimationDelayEl?.closest(".checkbox-setting") },
     ].filter((setting) => setting.element);
 }
 
@@ -1586,6 +1586,7 @@ document.addEventListener("keyup", (e) => {
 // Init
 (function init() {
     setupSettingsOverlay();
+    if (skipWinAnimationDelayEl) skipWinAnimationDelayEl.checked = true;
     const grid = createGrid(() => randomSymbol());
     renderGrid(grid);
     updateTotals();
