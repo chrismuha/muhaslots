@@ -102,6 +102,7 @@ const overlayPageEls = Array.from(document.querySelectorAll("[data-info-page]"))
 const casinoAdvantageTextEl = document.getElementById("casinoAdvantageText");
 const winLossOddsTextEl = document.getElementById("winLossOddsText");
 const sessionStatDisplayEl = document.getElementById("sessionStatDisplay");
+const creditsInsertedEl = document.getElementById("creditsInserted");
 const SESSION_STAT_CLEANUP_SELECTORS = [
     "#sessionWinningsBox",
     "#sessionLossesBox",
@@ -155,6 +156,7 @@ let sessionLossesUSD = 0;
 let netSessionWinningsUSD = 0;
 let netSessionLossesUSD = 0;
 let actualSessionNetUSD = 0;
+let creditsInsertedUSD = 0;
 
 document.addEventListener("gesturestart", (e) => e.preventDefault());
 document.addEventListener("gesturechange", (e) => e.preventDefault());
@@ -717,6 +719,8 @@ async function tryLastChanceSpin() {
     const requiredCreditUSD = roundUSD(Math.max(totalBetUSD - balance, 0));
     if (requiredCreditUSD > 0) {
         balance = clampBalanceUSD(balance + requiredCreditUSD);
+        creditsInsertedUSD = roundUSD(creditsInsertedUSD + requiredCreditUSD);
+        updateCreditsInsertedDisplay();
     }
     closeLastChanceOverlay();
     await doSpin({ totalBetOverrideUSD: totalBetUSD, offerLastChance: false });
@@ -830,6 +834,7 @@ function getSettingsDefinitions() {
     return [
         { key: "adjustMoney", title: "Adjust Money", element: creditStepEl?.closest(".credit-controls") },
         { key: "sessionStats", title: "Session Stats Display", element: sessionStatDisplayEl?.closest(".select") },
+        { key: "creditsInserted", title: "Credits Inserted", element: creditsInsertedEl?.closest(".stat") },
         { key: "denomination", title: "Denomination", element: denomEl?.closest(".select") },
         { key: "lines", title: "Lines", element: linesEl?.closest(".select") },
         { key: "bet", title: "Bet Per Line", element: betEl?.closest(".select") },
@@ -903,8 +908,9 @@ function setupSettingsOverlay() {
     }
     if (!Object.prototype.hasOwnProperty.call(settingsPins, "denomination")) {
         settingsPins.denomination = true;
-        saveSettingsPins();
     }
+    if (!Object.prototype.hasOwnProperty.call(settingsPins, "creditsInserted")) settingsPins.creditsInserted = true;
+    saveSettingsPins();
 
     settingsOverlayEl = document.createElement("div");
     settingsOverlayEl.className = "overlay settings-overlay";
@@ -1168,6 +1174,11 @@ function updateAllSessionDisplays() {
     updateNetSessionLossesDisplay();
     updateActualSessionWinningsDisplay();
     updateActualSessionLossesDisplay();
+    updateCreditsInsertedDisplay();
+}
+
+function updateCreditsInsertedDisplay() {
+    if (creditsInsertedEl) creditsInsertedEl.textContent = fmtUSD(creditsInsertedUSD);
 }
 
 function resetSessionState() {
@@ -1181,6 +1192,7 @@ function resetSessionState() {
     netSessionWinningsUSD = 0;
     netSessionLossesUSD = 0;
     actualSessionNetUSD = 0;
+    creditsInsertedUSD = 0;
     resetCustomJackpotOdds();
     updateGameOddsDisplay();
 
@@ -1200,7 +1212,12 @@ function resetSessionState() {
 function adjustBalanceByCredits(creditDelta) {
     const step = normalizeCreditStepValue(creditStepEl.value);
     creditStepEl.value = formatCreditStepValue(step);
-    balance = clampBalanceUSD(balance + roundUSD((step / 100) * creditDelta));
+    const adjustmentUSD = roundUSD((step / 100) * creditDelta);
+    balance = clampBalanceUSD(balance + adjustmentUSD);
+    if (adjustmentUSD > 0) {
+        creditsInsertedUSD = roundUSD(creditsInsertedUSD + adjustmentUSD);
+        updateCreditsInsertedDisplay();
+    }
     updateTotals();
     updateRealtimeCreditMessage();
     syncLastChanceOverlayState();
