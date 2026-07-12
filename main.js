@@ -138,6 +138,7 @@ let autoSpinRunning = false;
 let autoSpinStopRequested = false;
 let autoSpinRemaining = 0;
 let spinHoldTimer = 0;
+let spaceSpinHoldTimer = 0;
 let suppressSpinClick = false;
 let lastTouchEndAt = 0;
 let pendingLastChanceSpinUSD = 0;
@@ -1037,7 +1038,7 @@ function updateAutoSpinHint() {
         autoSpinHintEl.textContent = `Auto spin running (${autoSpinRemaining} spins). Tap Cancel to stop.`;
         return;
     }
-    autoSpinHintEl.textContent = "Hold Spin for auto spin. On desktop, press Spacebar to spin. Tap Cancel to stop.";
+    autoSpinHintEl.textContent = "Tap Spin or Spacebar once to spin. Hold either one for auto spin. Tap again to stop.";
 }
 
 function cancelAutoSpin() {
@@ -1336,7 +1337,16 @@ document.addEventListener("keydown", (e) => {
     const isInteractiveControl = target?.closest?.("button, a, [role='button']");
     if (isDesktop && e.code === "Space" && !isInteractiveControl) {
         e.preventDefault();
-        if (!e.repeat && !overlayOpen && !lastChanceOpen) handleSpinAction();
+        if (e.repeat || overlayOpen || lastChanceOpen) return;
+        if (autoSpinRunning) {
+            handleSpinAction();
+            return;
+        }
+        clearTimeout(spaceSpinHoldTimer);
+        spaceSpinHoldTimer = setTimeout(() => {
+            spaceSpinHoldTimer = 0;
+            if (!isSpinning) runAutoSpin();
+        }, 420);
     } else if (overlayOpen && e.key === "ArrowLeft") {
         e.preventDefault();
         stepOverlayPage(-1);
@@ -1350,6 +1360,15 @@ document.addEventListener("keydown", (e) => {
         e.preventDefault();
         creditDownBtn.click();
     }
+});
+
+document.addEventListener("keyup", (e) => {
+    const isDesktop = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    if (!isDesktop || e.code !== "Space" || !spaceSpinHoldTimer) return;
+    e.preventDefault();
+    clearTimeout(spaceSpinHoldTimer);
+    spaceSpinHoldTimer = 0;
+    handleSpinAction();
 });
 
 // Init
