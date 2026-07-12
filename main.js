@@ -830,6 +830,7 @@ function getSettingsDefinitions() {
     return [
         { key: "adjustMoney", title: "Adjust Money", element: creditStepEl?.closest(".credit-controls") },
         { key: "sessionStats", title: "Session Stats Display", element: sessionStatDisplayEl?.closest(".select") },
+        { key: "denomination", title: "Denomination", element: denomEl?.closest(".select") },
         { key: "lines", title: "Lines", element: linesEl?.closest(".select") },
         { key: "bet", title: "Bet Per Line", element: betEl?.closest(".select") },
         { key: "winOdds", title: "Regular Win Odds", element: winOddsEl?.closest(".select") },
@@ -899,6 +900,10 @@ function setupSettingsOverlay() {
         settingsPins = JSON.parse(localStorage.getItem(SETTINGS_PIN_STORAGE_KEY) || "{}");
     } catch {
         settingsPins = {};
+    }
+    if (!Object.prototype.hasOwnProperty.call(settingsPins, "denomination")) {
+        settingsPins.denomination = true;
+        saveSettingsPins();
     }
 
     settingsOverlayEl = document.createElement("div");
