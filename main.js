@@ -1037,7 +1037,7 @@ function updateAutoSpinHint() {
         autoSpinHintEl.textContent = `Auto spin running (${autoSpinRemaining} spins). Tap Cancel to stop.`;
         return;
     }
-    autoSpinHintEl.textContent = "Hold Spin to start auto spin. Tap Cancel to stop.";
+    autoSpinHintEl.textContent = "Hold Spin for auto spin. On desktop, press Spacebar to spin. Tap Cancel to stop.";
 }
 
 function cancelAutoSpin() {
@@ -1331,7 +1331,13 @@ document.addEventListener("keydown", (e) => {
     if (isTypingField) return;
 
     const overlayOpen = previewOverlayEl && !previewOverlayEl.hidden;
-    if (overlayOpen && e.key === "ArrowLeft") {
+    const lastChanceOpen = lastChanceOverlayEl && !lastChanceOverlayEl.hidden;
+    const isDesktop = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const isInteractiveControl = target?.closest?.("button, a, [role='button']");
+    if (isDesktop && e.code === "Space" && !isInteractiveControl) {
+        e.preventDefault();
+        if (!e.repeat && !overlayOpen && !lastChanceOpen) handleSpinAction();
+    } else if (overlayOpen && e.key === "ArrowLeft") {
         e.preventDefault();
         stepOverlayPage(-1);
     } else if (overlayOpen && e.key === "ArrowRight") {
