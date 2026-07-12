@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>Neon Slots</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-    <link rel="stylesheet" href="styles.css?v=20260712-10" />
+    <link rel="stylesheet" href="styles.css?v=20260712-11" />
 </head>
 
 <body>
@@ -137,48 +137,48 @@
                         <div class="select jackpot-odds-setting">
                             <label for="miniJackpotOdds">Mini Jackpot Odds</label>
                             <select id="miniJackpotOdds">
-                                <option value="0.01" selected>1% Jackpot / 99% No Jackpot</option>
+                                <option value="0.01">1% Jackpot / 99% No Jackpot</option>
                                 <option value="0.05">5% Jackpot / 95% No Jackpot</option>
                                 <option value="0.10">10% Jackpot / 90% No Jackpot</option>
-                                <option value="0.20">20% Jackpot / 80% No Jackpot</option>
+                                <option value="0.20" selected>20% Jackpot / 80% No Jackpot</option>
                                 <option value="0.30">30% Jackpot / 70% No Jackpot</option>
                                 <option value="custom">Custom…</option>
                             </select>
                             <div id="miniJackpotCustomOdds" class="custom-odds-row" hidden>
-                                <label>Mini Win %<input id="miniJackpotWinPercent" type="number" min="1" max="100" step="1" inputmode="numeric" value="1" /></label>
-                                <label>Mini Loss %<input id="miniJackpotLossPercent" type="number" min="0" max="99" step="1" inputmode="numeric" value="99" /></label>
+                                <label>Mini Win %<input id="miniJackpotWinPercent" type="number" min="1" max="100" step="1" inputmode="numeric" value="20" /></label>
+                                <label>Mini Loss %<input id="miniJackpotLossPercent" type="number" min="0" max="99" step="1" inputmode="numeric" value="80" /></label>
                             </div>
                         </div>
 
                         <div class="select jackpot-odds-setting">
                             <label for="minorJackpotOdds">Minor Jackpot Odds</label>
                             <select id="minorJackpotOdds">
-                                <option value="0.01" selected>1% Jackpot / 99% No Jackpot</option>
+                                <option value="0.01">1% Jackpot / 99% No Jackpot</option>
                                 <option value="0.05">5% Jackpot / 95% No Jackpot</option>
-                                <option value="0.10">10% Jackpot / 90% No Jackpot</option>
+                                <option value="0.10" selected>10% Jackpot / 90% No Jackpot</option>
                                 <option value="0.20">20% Jackpot / 80% No Jackpot</option>
                                 <option value="0.30">30% Jackpot / 70% No Jackpot</option>
                                 <option value="custom">Custom…</option>
                             </select>
                             <div id="minorJackpotCustomOdds" class="custom-odds-row" hidden>
-                                <label>Minor Win %<input id="minorJackpotWinPercent" type="number" min="1" max="100" step="1" inputmode="numeric" value="1" /></label>
-                                <label>Minor Loss %<input id="minorJackpotLossPercent" type="number" min="0" max="99" step="1" inputmode="numeric" value="99" /></label>
+                                <label>Minor Win %<input id="minorJackpotWinPercent" type="number" min="1" max="100" step="1" inputmode="numeric" value="10" /></label>
+                                <label>Minor Loss %<input id="minorJackpotLossPercent" type="number" min="0" max="99" step="1" inputmode="numeric" value="90" /></label>
                             </div>
                         </div>
 
                         <div class="select jackpot-odds-setting">
                             <label for="majorJackpotOdds">Major Jackpot Odds</label>
                             <select id="majorJackpotOdds">
-                                <option value="0.01" selected>1% Jackpot / 99% No Jackpot</option>
-                                <option value="0.05">5% Jackpot / 95% No Jackpot</option>
+                                <option value="0.01">1% Jackpot / 99% No Jackpot</option>
+                                <option value="0.05" selected>5% Jackpot / 95% No Jackpot</option>
                                 <option value="0.10">10% Jackpot / 90% No Jackpot</option>
                                 <option value="0.20">20% Jackpot / 80% No Jackpot</option>
                                 <option value="0.30">30% Jackpot / 70% No Jackpot</option>
                                 <option value="custom">Custom…</option>
                             </select>
                             <div id="majorJackpotCustomOdds" class="custom-odds-row" hidden>
-                                <label>Major Win %<input id="majorJackpotWinPercent" type="number" min="1" max="100" step="1" inputmode="numeric" value="1" /></label>
-                                <label>Major Loss %<input id="majorJackpotLossPercent" type="number" min="0" max="99" step="1" inputmode="numeric" value="99" /></label>
+                                <label>Major Win %<input id="majorJackpotWinPercent" type="number" min="1" max="100" step="1" inputmode="numeric" value="5" /></label>
+                                <label>Major Loss %<input id="majorJackpotLossPercent" type="number" min="0" max="99" step="1" inputmode="numeric" value="95" /></label>
                             </div>
                         </div>
 
@@ -352,7 +352,7 @@
         </div>
     </div>
 
-    <script src="main.js?v=20260712-10"></script>
+    <script src="main.js?v=20260712-11"></script>
 </body>
 
 </html>

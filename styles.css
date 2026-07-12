@@ -1288,6 +1288,24 @@ body.overlay-open {
   overflow: hidden;
 }
 
+html.overlay-open,
+body.overlay-open {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
+body.overlay-open {
+  touch-action: none;
+}
+
+.overlay-panel,
+.overlay-content,
+.overlay-section,
+.settings-stage {
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
 .overlay[hidden] {
   display: none;
 }
