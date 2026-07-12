@@ -1532,32 +1532,65 @@ body.overlay-open {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 4.8em;
-  padding: .28em .48em;
+  min-width: 4.7em;
+  min-height: 2.8em;
+  padding: .24em .42em;
   border: 2px solid var(--jackpot-color);
-  border-radius: 12px;
-  background: #090d18;
-  color: var(--jackpot-color);
-  font-size: clamp(.58rem, 1.35vw, .9rem);
+  border-radius: 999px;
+  color: #080b10;
+  font-size: clamp(.65rem, 1.5vw, 1rem);
+  font-weight: 900;
   line-height: 1;
-  box-shadow: 0 0 10px var(--jackpot-color), inset 0 0 16px color-mix(in srgb, var(--jackpot-color) 25%, transparent);
-  animation: muha-jackpot-win 700ms ease-in-out infinite alternate;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .4), 0 0 16px var(--jackpot-color);
+  animation: muha-jackpot-win 900ms cubic-bezier(.2, .85, .25, 1) infinite alternate;
+}
+
+.jackpot-chip.jackpot-mini {
+  background: radial-gradient(circle at 35% 28%, #e9fcff, #39dfff 62%, #08708c);
+}
+
+.jackpot-chip.jackpot-minor {
+  background: radial-gradient(circle at 35% 28%, #efffed, #72f06a 62%, #197a2c);
+}
+
+.jackpot-chip.jackpot-major {
+  background: radial-gradient(circle at 35% 28%, #fff0fc, #ff44df 62%, #8c176f);
+}
+
+.jackpot-chip.jackpot-grand {
+  background: radial-gradient(circle at 35% 28%, #fffbe0, #ffd23f 62%, #a76300);
 }
 
 .jackpot-chip strong {
+  font-size: .72em;
+  line-height: 1;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
 
 .jackpot-chip span {
-  margin-top: .2em;
-  color: #fff;
+  margin-top: .12em;
+  color: #080b10;
+  font-size: .68em;
+  line-height: 1;
   font-weight: 900;
 }
 
 @keyframes muha-jackpot-win {
-  from { transform: scale(.88) rotate(-2deg); filter: brightness(.9); }
-  to { transform: scale(1.1) rotate(2deg); filter: brightness(1.35); box-shadow: 0 0 28px var(--jackpot-color), inset 0 0 22px var(--jackpot-color); }
+  0% {
+    transform: translateY(7px) scale(.82) rotate(-4deg);
+    filter: brightness(.9);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.3), 0 0 5px var(--jackpot-color);
+  }
+  55% {
+    transform: translateY(-4px) scale(1.12) rotate(3deg);
+    filter: brightness(1.3);
+  }
+  100% {
+    transform: translateY(0) scale(1.03);
+    filter: brightness(1.08);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.55), 0 0 24px var(--jackpot-color), 0 0 42px var(--jackpot-color);
+  }
 }
 
 @media (max-width: 520px) {
