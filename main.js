@@ -24,6 +24,13 @@ const PAYTABLE = {
     "🍒": { 3: 5, 4: 20, 5: 100 },
 };
 
+const JACKPOT_TIERS = [
+    { name: "Mini", oddsElementId: "miniJackpotOdds", customId: "miniJackpotCustomOdds", winInputId: "miniJackpotWinPercent", lossInputId: "miniJackpotLossPercent", defaultRate: 0.2, amountUSD: 10 },
+    { name: "Minor", oddsElementId: "minorJackpotOdds", customId: "minorJackpotCustomOdds", winInputId: "minorJackpotWinPercent", lossInputId: "minorJackpotLossPercent", defaultRate: 0.1, amountUSD: 100 },
+    { name: "Major", oddsElementId: "majorJackpotOdds", customId: "majorJackpotCustomOdds", winInputId: "majorJackpotWinPercent", lossInputId: "majorJackpotLossPercent", defaultRate: 0.05, amountUSD: 1000 },
+    { name: "Grand", oddsElementId: "grandJackpotOdds", customId: "grandJackpotCustomOdds", winInputId: "grandJackpotWinPercent", lossInputId: "grandJackpotLossPercent", defaultRate: 0.01, amountUSD: 10000 },
+];
+
 const ROWS = 5;
 const COLS = 5;
 const MAX_OUTCOME_ATTEMPTS = 200;
@@ -76,6 +83,7 @@ const creditDownBtn = document.getElementById("creditDown");
 const spinBtn = document.getElementById("spin");
 const maxBtn = document.getElementById("max");
 const resetSessionBtn = document.getElementById("resetSession");
+const settingsButtonEl = document.getElementById("settingsButton");
 const autoSpinHintEl = document.getElementById("autoSpinHint");
 const payInfoBtn = document.getElementById("payInfo");
 const previewOverlayEl = document.getElementById("previewOverlay");
@@ -94,6 +102,7 @@ const overlayPageEls = Array.from(document.querySelectorAll("[data-info-page]"))
 const casinoAdvantageTextEl = document.getElementById("casinoAdvantageText");
 const winLossOddsTextEl = document.getElementById("winLossOddsText");
 const sessionStatDisplayEl = document.getElementById("sessionStatDisplay");
+const creditsInsertedEl = document.getElementById("creditsInserted");
 const SESSION_STAT_CLEANUP_SELECTORS = [
     "#sessionWinningsBox",
     "#sessionLossesBox",
@@ -130,10 +139,16 @@ let autoSpinRunning = false;
 let autoSpinStopRequested = false;
 let autoSpinRemaining = 0;
 let spinHoldTimer = 0;
+let spaceSpinHoldTimer = 0;
 let suppressSpinClick = false;
 let lastTouchEndAt = 0;
 let pendingLastChanceSpinUSD = 0;
 let totalBetDisplayOverrideUSD = null;
+let settingsOverlayEl = null;
+let settingsPageIndex = 0;
+let settingsItems = [];
+let settingsPins = {};
+const SETTINGS_PIN_STORAGE_KEY = "muhaSlots.settingsPins.v1";
 
 // Session Winnings State
 let sessionWinningsUSD = 0;
@@ -141,6 +156,7 @@ let sessionLossesUSD = 0;
 let netSessionWinningsUSD = 0;
 let netSessionLossesUSD = 0;
 let actualSessionNetUSD = 0;
+let creditsInsertedUSD = 0;
 
 document.addEventListener("gesturestart", (e) => e.preventDefault());
 document.addEventListener("gesturechange", (e) => e.preventDefault());
@@ -270,6 +286,44 @@ function getTargetSpinWinRate() {
     return Math.min(0.99, Math.max(0.01, value));
 }
 
+function getTargetJackpotRate(tier) {
+    const select = document.getElementById(tier.oddsElementId);
+    const value = select?.value === "custom"
+        ? Number.parseInt(document.getElementById(tier.winInputId)?.value, 10) / 100
+        : Number.parseFloat(select?.value ?? tier.defaultRate);
+    return Number.isFinite(value) ? Math.min(1, Math.max(0.01, value)) : tier.defaultRate;
+}
+
+function syncCustomJackpotOdds(tier, changedSide = null) {
+    const select = document.getElementById(tier.oddsElementId);
+    const customRow = document.getElementById(tier.customId);
+    const winInput = document.getElementById(tier.winInputId);
+    const lossInput = document.getElementById(tier.lossInputId);
+    if (!select || !customRow || !winInput || !lossInput) return;
+    customRow.hidden = select.value !== "custom";
+    if (select.value !== "custom" || !changedSide) return;
+    if (changedSide === "win") {
+        const win = Math.min(100, Math.max(1, Number.parseInt(winInput.value, 10) || 1));
+        winInput.value = String(win);
+        lossInput.value = String(100 - win);
+    } else {
+        const loss = Math.min(99, Math.max(0, Number.parseInt(lossInput.value, 10) || 0));
+        lossInput.value = String(loss);
+        winInput.value = String(100 - loss);
+    }
+    updateGameOddsDisplay();
+}
+
+function resetCustomJackpotOdds() {
+    for (const tier of JACKPOT_TIERS) {
+        document.getElementById(tier.oddsElementId).value = String(tier.defaultRate);
+        const defaultWinPercent = Math.round(tier.defaultRate * 100);
+        document.getElementById(tier.winInputId).value = String(defaultWinPercent);
+        document.getElementById(tier.lossInputId).value = String(100 - defaultWinPercent);
+        syncCustomJackpotOdds(tier);
+    }
+}
+
 function choiceWeighted(weightsMap) {
     const entries = Object.entries(weightsMap);
     const total = entries.reduce((s, [, w]) => s + w, 0);
@@ -380,10 +434,55 @@ function createCell(symbol, isWinning = false) {
     const cell = document.createElement("div");
     cell.className = "cell";
     if (isWinning) cell.classList.add("win");
+    if (typeof symbol === "object") {
+        const chip = document.createElement("span");
+        chip.className = `jackpot-chip jackpot-${symbol.jackpot.toLowerCase()}`;
+        chip.innerHTML = `<strong>${symbol.jackpot}</strong><span>${fmtUSD(symbol.value)}</span>`;
+        chip.setAttribute("aria-hidden", "true");
+        cell.appendChild(chip);
+        cell.classList.add("jackpot-win");
+        cell.setAttribute("aria-label", `${symbol.jackpot} jackpot, won ${fmtUSD(symbol.value)}`);
+        return cell;
+    }
     cell.innerHTML = `<span class="icon-container" aria-hidden="true">${symbol}</span>`;
     cell.setAttribute("role", "img");
     cell.setAttribute("aria-label", `Symbol ${symbol}`);
     return cell;
+}
+
+function resolveJackpotWins() {
+    const jackpotTiers = JACKPOT_TIERS.map((tier) => ({
+        tier,
+        rate: getTargetJackpotRate(tier)
+    }));
+    const jackpotRate = Math.max(...jackpotTiers.map(({ rate }) => rate));
+    if (Math.random() >= jackpotRate) return [];
+    return jackpotTiers
+        .filter(({ rate }) => Math.random() < rate / jackpotRate)
+        .map(({ tier }) => tier);
+}
+
+function renderOutcomeGrid(grid, winningPositions, jackpotWins) {
+    if (jackpotWins.length === 0) {
+        renderGrid(grid, winningPositions);
+        return;
+    }
+    const displayGrid = grid.map((row) => [...row]);
+    const preferredPositions = [[2, 2], [2, 1], [2, 3], [1, 2], [3, 2], [0, 2], [4, 2]];
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) preferredPositions.push([row, col]);
+    }
+    const displayPositions = new Set(winningPositions);
+    const jackpotPositions = new Set();
+    for (const jackpotWin of jackpotWins) {
+        const position = preferredPositions.find(([r, c]) => !displayPositions.has(`${r},${c}`))
+            || preferredPositions.find(([r, c]) => !jackpotPositions.has(`${r},${c}`));
+        const [row, col] = position;
+        displayGrid[row][col] = { jackpot: jackpotWin.name, value: jackpotWin.amountUSD };
+        displayPositions.add(`${row},${col}`);
+        jackpotPositions.add(`${row},${col}`);
+    }
+    renderGrid(displayGrid, displayPositions);
 }
 
 function renderGrid(grid, winningPositions = new Set()) {
@@ -526,10 +625,13 @@ function updateGameOddsDisplay() {
     const { lineWinProb, lineLossProb, returnToPlayer, casinoAdvantage } = getPerLineOddsAndReturn();
     const linesActive = Math.min(10, Math.max(1, parseInt(linesEl.value, 10) || 1));
     const targetSpinWinRate = getTargetSpinWinRate();
+    const jackpotOddsText = JACKPOT_TIERS
+        .map((tier) => `${tier.name} ${fmtPercent(getTargetJackpotRate(tier))}`)
+        .join(", ");
 
     casinoAdvantageTextEl.textContent =
         `Configured spin resolution: win ${fmtPercent(targetSpinWinRate)}, loss ${fmtPercent(1 - targetSpinWinRate)}. ` +
-        `Payout size still follows the paytable after a winning spin.`;
+        `Independent jackpot chances: ${jackpotOddsText}. Multiple jackpots and a regular win can occur together.`;
 
     winLossOddsTextEl.textContent =
         `Current ${linesActive}-line paytable model: per-line win ${fmtPercent(lineWinProb)} (${fmtOneIn(lineWinProb)}), ` +
@@ -570,8 +672,10 @@ function togglePreviewOverlay(force) {
 function syncOverlayOpenState() {
     const anyOpen =
         (previewOverlayEl && !previewOverlayEl.hidden) ||
-        (lastChanceOverlayEl && !lastChanceOverlayEl.hidden);
+        (lastChanceOverlayEl && !lastChanceOverlayEl.hidden) ||
+        (settingsOverlayEl && !settingsOverlayEl.hidden);
     document.body.classList.toggle("overlay-open", Boolean(anyOpen));
+    document.documentElement.classList.toggle("overlay-open", Boolean(anyOpen));
 }
 
 function closeLastChanceOverlay({ restoreFocus = false } = {}) {
@@ -615,6 +719,8 @@ async function tryLastChanceSpin() {
     const requiredCreditUSD = roundUSD(Math.max(totalBetUSD - balance, 0));
     if (requiredCreditUSD > 0) {
         balance = clampBalanceUSD(balance + requiredCreditUSD);
+        creditsInsertedUSD = roundUSD(creditsInsertedUSD + requiredCreditUSD);
+        updateCreditsInsertedDisplay();
     }
     closeLastChanceOverlay();
     await doSpin({ totalBetOverrideUSD: totalBetUSD, offerLastChance: false });
@@ -707,6 +813,12 @@ function bindRapidPress(button, action, options = {}) {
 function handleEsc(e) {
     if (e.key !== "Escape") return;
 
+    if (settingsOverlayEl && !settingsOverlayEl.hidden) {
+        closeSettingsOverlay();
+        settingsButtonEl?.focus();
+        return;
+    }
+
     if (lastChanceOverlayEl && !lastChanceOverlayEl.hidden) {
         closeLastChanceOverlay({ restoreFocus: true });
         return;
@@ -716,6 +828,129 @@ function handleEsc(e) {
         togglePreviewOverlay(false);
         payInfoBtn?.focus();
     }
+}
+
+function getSettingsDefinitions() {
+    return [
+        { key: "adjustMoney", title: "Adjust Money", element: creditStepEl?.closest(".credit-controls") },
+        { key: "sessionStats", title: "Session Stats Display", element: sessionStatDisplayEl?.closest(".select") },
+        { key: "creditsInserted", title: "Credits Inserted", element: creditsInsertedEl?.closest(".stat") },
+        { key: "denomination", title: "Denomination", element: denomEl?.closest(".select") },
+        { key: "lines", title: "Lines", element: linesEl?.closest(".select") },
+        { key: "bet", title: "Bet Per Line", element: betEl?.closest(".select") },
+        { key: "winOdds", title: "Regular Win Odds", element: winOddsEl?.closest(".select") },
+        ...JACKPOT_TIERS.map((tier) => ({
+            key: `${tier.name.toLowerCase()}JackpotOdds`,
+            title: `${tier.name} Jackpot Odds`,
+            element: document.getElementById(tier.oddsElementId)?.closest(".select"),
+        })),
+        { key: "maxBetCredits", title: "Max Bet Credits", element: maxBetUsesAvailableCreditsEl?.closest(".checkbox-setting") },
+        { key: "winDelay", title: "Winning Highlight Delay", element: skipWinAnimationDelayEl?.closest(".checkbox-setting") },
+    ].filter((setting) => setting.element);
+}
+
+function saveSettingsPins() {
+    try {
+        localStorage.setItem(SETTINGS_PIN_STORAGE_KEY, JSON.stringify(settingsPins));
+    } catch {
+        // Pinning still works for the current page when storage is unavailable.
+    }
+}
+
+function placeSettingsOnHome() {
+    for (const setting of settingsItems) {
+        if (settingsPins[setting.key]) {
+            setting.marker.parentNode.insertBefore(setting.element, setting.marker.nextSibling);
+        } else {
+            settingsOverlayEl.querySelector(".settings-stash").appendChild(setting.element);
+        }
+    }
+}
+
+function showSettingsPage(index) {
+    if (!settingsItems.length) return;
+    const stash = settingsOverlayEl.querySelector(".settings-stash");
+    const stage = settingsOverlayEl.querySelector(".settings-stage");
+    const current = stage.firstElementChild;
+    if (current) stash.appendChild(current);
+    settingsPageIndex = (index + settingsItems.length) % settingsItems.length;
+    const setting = settingsItems[settingsPageIndex];
+    stage.appendChild(setting.element);
+    settingsOverlayEl.querySelector(".settings-page-title").textContent = setting.title;
+    settingsOverlayEl.querySelector(".settings-page-count").textContent =
+        `Page ${settingsPageIndex + 1} of ${settingsItems.length}`;
+    settingsOverlayEl.querySelector(".settings-pin-toggle").checked = Boolean(settingsPins[setting.key]);
+}
+
+function openSettingsOverlay() {
+    if (!settingsOverlayEl) return;
+    settingsOverlayEl.hidden = false;
+    settingsButtonEl?.setAttribute("aria-expanded", "true");
+    showSettingsPage(settingsPageIndex);
+    syncOverlayOpenState();
+}
+
+function closeSettingsOverlay() {
+    if (!settingsOverlayEl) return;
+    const stageSetting = settingsOverlayEl.querySelector(".settings-stage").firstElementChild;
+    if (stageSetting) settingsOverlayEl.querySelector(".settings-stash").appendChild(stageSetting);
+    placeSettingsOnHome();
+    settingsOverlayEl.hidden = true;
+    settingsButtonEl?.setAttribute("aria-expanded", "false");
+    syncOverlayOpenState();
+}
+
+function setupSettingsOverlay() {
+    try {
+        settingsPins = JSON.parse(localStorage.getItem(SETTINGS_PIN_STORAGE_KEY) || "{}");
+    } catch {
+        settingsPins = {};
+    }
+    if (!Object.prototype.hasOwnProperty.call(settingsPins, "denomination")) {
+        settingsPins.denomination = true;
+    }
+    if (!Object.prototype.hasOwnProperty.call(settingsPins, "creditsInserted")) settingsPins.creditsInserted = true;
+    saveSettingsPins();
+
+    settingsOverlayEl = document.createElement("div");
+    settingsOverlayEl.className = "overlay settings-overlay";
+    settingsOverlayEl.hidden = true;
+    settingsOverlayEl.innerHTML = `
+        <div class="overlay-panel settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsOverlayTitle">
+            <div class="overlay-head">
+                <h3 id="settingsOverlayTitle">Game Settings</h3>
+                <button type="button" class="overlay-close settings-close">Close</button>
+            </div>
+            <div class="settings-toolbar">
+                <button type="button" class="settings-prev" aria-label="Previous setting">← Previous</button>
+                <span class="settings-page-count"></span>
+                <button type="button" class="settings-next" aria-label="Next setting">Next →</button>
+            </div>
+            <h4 class="settings-page-title"></h4>
+            <div class="settings-stage"></div>
+            <label class="settings-pin-row">
+                <input type="checkbox" class="settings-pin-toggle" />
+                <span>Show this setting on the home screen</span>
+            </label>
+            <div class="settings-stash" hidden></div>
+        </div>`;
+    document.body.appendChild(settingsOverlayEl);
+
+    settingsItems = getSettingsDefinitions().map((setting) => {
+        const marker = document.createComment(`settings-home-${setting.key}`);
+        setting.element.parentNode.insertBefore(marker, setting.element);
+        return { ...setting, marker };
+    });
+
+    settingsOverlayEl.querySelector(".settings-close").addEventListener("click", closeSettingsOverlay);
+    settingsOverlayEl.querySelector(".settings-prev").addEventListener("click", () => showSettingsPage(settingsPageIndex - 1));
+    settingsOverlayEl.querySelector(".settings-next").addEventListener("click", () => showSettingsPage(settingsPageIndex + 1));
+    settingsOverlayEl.querySelector(".settings-pin-toggle").addEventListener("change", (event) => {
+        settingsPins[settingsItems[settingsPageIndex].key] = event.target.checked;
+        saveSettingsPins();
+    });
+    settingsButtonEl?.addEventListener("click", openSettingsOverlay);
+    placeSettingsOnHome();
 }
 
 // Credit step controls (▲ / ▼)
@@ -865,7 +1100,7 @@ function updateActualSessionLossesDisplay() {
 }
 
 function updateSessionStatsVisibility() {
-    const mode = sessionStatDisplayEl?.value || "both";
+    const mode = sessionStatDisplayEl?.value || "actualNetBoth";
     const winningsBox = document.getElementById("sessionWinningsBox");
     const lossesBox = document.getElementById("sessionLossesBox");
     const netWinningsBox = document.getElementById("netSessionWinningsBox");
@@ -881,7 +1116,7 @@ function updateSessionStatsVisibility() {
         !actualLossesBox
     ) return;
 
-    const selected = SESSION_VISIBILITY_BY_MODE[mode] || SESSION_VISIBILITY_BY_MODE.both;
+    const selected = SESSION_VISIBILITY_BY_MODE[mode] || SESSION_VISIBILITY_BY_MODE.actualNetBoth;
 
     winningsBox.hidden = !selected.winnings;
     lossesBox.hidden = !selected.losses;
@@ -939,6 +1174,11 @@ function updateAllSessionDisplays() {
     updateNetSessionLossesDisplay();
     updateActualSessionWinningsDisplay();
     updateActualSessionLossesDisplay();
+    updateCreditsInsertedDisplay();
+}
+
+function updateCreditsInsertedDisplay() {
+    if (creditsInsertedEl) creditsInsertedEl.textContent = fmtUSD(creditsInsertedUSD);
 }
 
 function resetSessionState() {
@@ -952,6 +1192,9 @@ function resetSessionState() {
     netSessionWinningsUSD = 0;
     netSessionLossesUSD = 0;
     actualSessionNetUSD = 0;
+    creditsInsertedUSD = 0;
+    resetCustomJackpotOdds();
+    updateGameOddsDisplay();
 
     if (lastChanceOverlayEl && !lastChanceOverlayEl.hidden) {
         closeLastChanceOverlay();
@@ -969,7 +1212,12 @@ function resetSessionState() {
 function adjustBalanceByCredits(creditDelta) {
     const step = normalizeCreditStepValue(creditStepEl.value);
     creditStepEl.value = formatCreditStepValue(step);
-    balance = clampBalanceUSD(balance + roundUSD((step / 100) * creditDelta));
+    const adjustmentUSD = roundUSD((step / 100) * creditDelta);
+    balance = clampBalanceUSD(balance + adjustmentUSD);
+    if (adjustmentUSD > 0) {
+        creditsInsertedUSD = roundUSD(creditsInsertedUSD + adjustmentUSD);
+        updateCreditsInsertedDisplay();
+    }
     updateTotals();
     updateRealtimeCreditMessage();
     syncLastChanceOverlayState();
@@ -991,7 +1239,7 @@ function updateAutoSpinHint() {
         autoSpinHintEl.textContent = `Auto spin running (${autoSpinRemaining} spins). Tap Cancel to stop.`;
         return;
     }
-    autoSpinHintEl.textContent = "Hold Spin to start auto spin. Tap Cancel to stop.";
+    autoSpinHintEl.textContent = "Tap Spin or Spacebar once to spin. Hold either one for auto spin. Tap again to stop.";
 }
 
 function cancelAutoSpin() {
@@ -1083,9 +1331,12 @@ async function doSpin(options = {}) {
     // Final outcome
     const shouldWin = Math.random() < getTargetSpinWinRate();
     const grid = resolveSpinGrid(shouldWin);
-    const { totalWinUSD, lineWins, winningPositions } = evaluateGrid(grid, wagerConfig);
+    const { totalWinUSD: regularWinUSD, lineWins, winningPositions } = evaluateGrid(grid, wagerConfig);
+    const jackpotWins = resolveJackpotWins();
+    const jackpotWinUSD = jackpotWins.reduce((sum, jackpot) => sum + jackpot.amountUSD, 0);
+    const totalWinUSD = roundUSD(regularWinUSD + jackpotWinUSD);
     const lossComponentUSD = Math.max(totalBetUSD - totalWinUSD, 0);
-    renderGrid(grid, winningPositions);
+    renderOutcomeGrid(grid, winningPositions, jackpotWins);
     addSessionLosses(lossComponentUSD);
     addNetSessionLosses(lossComponentUSD);
     subtractNetSessionWinnings(lossComponentUSD);
@@ -1101,6 +1352,7 @@ async function doSpin(options = {}) {
 
         const linesText = lineWins
             .map(w => `Line ${w.lineIndex}: ${w.symbol} × ${w.count} → ${fmtUSD(w.winUSD)}`)
+            .concat(jackpotWins.map((jackpot) => `${jackpot.name.toUpperCase()} JACKPOT → ${fmtUSD(jackpot.amountUSD)}`))
             .join(" • ");
         setMessage(`WIN ${fmtUSD(totalWinUSD)} — ${linesText}`);
     } else {
@@ -1199,6 +1451,14 @@ denomEl.addEventListener("change", onConfigChange);
 linesEl.addEventListener("change", onConfigChange);
 betEl.addEventListener("change", onConfigChange);
 winOddsEl?.addEventListener("change", onConfigChange);
+JACKPOT_TIERS.forEach((tier) => {
+    document.getElementById(tier.oddsElementId)?.addEventListener("change", () => {
+        syncCustomJackpotOdds(tier);
+        onConfigChange();
+    });
+    document.getElementById(tier.winInputId)?.addEventListener("input", () => syncCustomJackpotOdds(tier, "win"));
+    document.getElementById(tier.lossInputId)?.addEventListener("input", () => syncCustomJackpotOdds(tier, "loss"));
+});
 maxBetUsesAvailableCreditsEl?.addEventListener("change", onConfigChange);
 skipWinAnimationDelayEl?.addEventListener("change", updateAutoSpinHint);
 sessionStatDisplayEl?.addEventListener("change", updateSessionStatsVisibility);
@@ -1279,8 +1539,25 @@ document.addEventListener("keydown", (e) => {
     );
     if (isTypingField) return;
 
-    const overlayOpen = previewOverlayEl && !previewOverlayEl.hidden;
-    if (overlayOpen && e.key === "ArrowLeft") {
+    const overlayOpen =
+        (previewOverlayEl && !previewOverlayEl.hidden) ||
+        (settingsOverlayEl && !settingsOverlayEl.hidden);
+    const lastChanceOpen = lastChanceOverlayEl && !lastChanceOverlayEl.hidden;
+    const isDesktop = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const isInteractiveControl = target?.closest?.("button, a, [role='button']");
+    if (isDesktop && e.code === "Space" && !isInteractiveControl) {
+        e.preventDefault();
+        if (e.repeat || overlayOpen || lastChanceOpen) return;
+        if (autoSpinRunning) {
+            handleSpinAction();
+            return;
+        }
+        clearTimeout(spaceSpinHoldTimer);
+        spaceSpinHoldTimer = setTimeout(() => {
+            spaceSpinHoldTimer = 0;
+            if (!isSpinning) runAutoSpin();
+        }, 420);
+    } else if (overlayOpen && e.key === "ArrowLeft") {
         e.preventDefault();
         stepOverlayPage(-1);
     } else if (overlayOpen && e.key === "ArrowRight") {
@@ -1295,8 +1572,18 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
+document.addEventListener("keyup", (e) => {
+    const isDesktop = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    if (!isDesktop || e.code !== "Space" || !spaceSpinHoldTimer) return;
+    e.preventDefault();
+    clearTimeout(spaceSpinHoldTimer);
+    spaceSpinHoldTimer = 0;
+    handleSpinAction();
+});
+
 // Init
 (function init() {
+    setupSettingsOverlay();
     const grid = createGrid(() => randomSymbol());
     renderGrid(grid);
     updateTotals();
