@@ -51,17 +51,21 @@
                             <span class="muted">Total Bet:</span>
                             <b id="totalBet">—</b>
                         </div>
+                        <div id="creditsInsertedBox" class="stat">
+                            <span class="muted">Credits Inserted:</span>
+                            <b id="creditsInserted">$0.00</b>
+                        </div>
 
                         <div class="select">
                             <label for="sessionStatDisplay">Session Stats Display</label>
                             <select id="sessionStatDisplay">
-                                <option value="both" selected>Both</option>
+                                <option value="both">Both</option>
                                 <option value="winnings">Winnings Only</option>
                                 <option value="losses">Losses Only</option>
                                 <option value="netBoth">Both Net</option>
                                 <option value="netWinnings">Net Winnings Only</option>
                                 <option value="netLosses">Net Losses Only</option>
-                                <option value="actualNetBoth">Both Actual Net</option>
+                                <option value="actualNetBoth" selected>Both Actual Net</option>
                                 <option value="actualNetWinnings">Actual Net Winnings Only</option>
                                 <option value="actualNetLosses">Actual Net Losses Only</option>
                             </select>
@@ -70,11 +74,11 @@
                         <div class="select">
                             <label for="denom">Denomination (Value Per Credit):</label>
                             <select id="denom">
-                                <option value="0.01" selected>$0.01</option>
-                                <option value="0.05">$0.05</option>
-                                <option value="0.10">$0.10</option>
-                                <option value="0.25">$0.25</option>
-                                <option value="0.50">$0.50</option>
+                                <option value="0.01" selected>1c</option>
+                                <option value="0.05">5c</option>
+                                <option value="0.10">10c</option>
+                                <option value="0.25">25c</option>
+                                <option value="0.50">50c</option>
                                 <option value="1.00">$1.00</option>
                                 <option value="2.00">$2.00</option>
                                 <option value="5.00">$5.00</option>
@@ -252,7 +256,7 @@
                     <p>Payout = multiplier x bet per line (credits) x denomination ($).</p>
                     <p>Only matching symbols from the left count. 3, 4, or 5 in a row on an active payline pays.</p>
                     <p>The wild symbol (<span class="icon-container" aria-hidden="true">🃏</span>) substitutes for any regular symbol from the left. All-wild hits pay the wild row.</p>
-                    <p>Mini, Minor, Major, and Grand each have their own odds and are rolled independently from regular Win Odds and from one another. Any combination can occur by itself or with a regular win. A jackpot chip appears only when its corresponding roll succeeds.</p>
+                    <p>Jackpots use a shared event that is independent from regular Win Odds. The highest selected Jackpot Odds value sets the chance that at least one jackpot occurs, while each tier retains its selected chance and multiple tiers can be awarded together. When every tier is set to 1%, the overall jackpot chance is 1% per spin.</p>
                     <p>Fixed awards: Mini $10, Minor $100, Major $1,000, and Grand $10,000.</p>
                     <h4>Settings Guide</h4>
                     <p class="overlay-note"><strong>Session Stats Display:</strong> Chooses which stat boxes are visible (regular session totals, Net totals, or Actual Net totals).</p>
@@ -268,7 +272,7 @@
                     <p class="overlay-note"><strong>Bet Per Line:</strong> Credits wagered on each active line. Increasing this raises both total bet and possible payout.</p>
                     <p class="overlay-note"><strong>Win Odds:</strong> Sets the target chance that a spin resolves as a win. Winning payout amounts still come from the paytable.</p>
                     <p class="overlay-note"><strong>Jackpot Odds:</strong> Each tier offers 1%, 5%, 10%, 20%, 30%, or Custom. Custom uses linked whole-number Win and Loss fields totaling 100%, allows 1%–100% win odds, and clears on Reset Session or page reload.</p>
-                    <p class="overlay-note"><strong>Settings:</strong> Opens the paginated settings dialog. Use Show this setting on the home screen to pin individual settings. Denomination always remains on the home screen.</p>
+                    <p class="overlay-note"><strong>Settings:</strong> Opens the paginated settings dialog. Use Show this setting on the home screen to pin individual settings. Denomination is pinned by default.</p>
                     <p class="overlay-note"><strong>Adjust Credit + ▲/▼:</strong> Sets how much credit to add/remove per click, scaled by denomination.</p>
                     <p class="overlay-note"><strong>Skip Winning Highlight Delay:</strong> Removes the auto-spin pause after winning reels are highlighted.</p>
                     <p class="overlay-note"><strong>Spin:</strong> Plays one round using current settings and deducts the total bet first. On desktop, tap Spacebar for one spin or hold it for auto spin; Spacebar does not scroll the page.</p>
