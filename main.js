@@ -25,10 +25,10 @@ const PAYTABLE = {
 };
 
 const JACKPOT_TIERS = [
-    { name: "Mini", oddsElementId: "miniJackpotOdds", customId: "miniJackpotCustomOdds", winInputId: "miniJackpotWinPercent", lossInputId: "miniJackpotLossPercent", defaultRate: 0.2, amountUSD: 10 },
-    { name: "Minor", oddsElementId: "minorJackpotOdds", customId: "minorJackpotCustomOdds", winInputId: "minorJackpotWinPercent", lossInputId: "minorJackpotLossPercent", defaultRate: 0.1, amountUSD: 100 },
-    { name: "Major", oddsElementId: "majorJackpotOdds", customId: "majorJackpotCustomOdds", winInputId: "majorJackpotWinPercent", lossInputId: "majorJackpotLossPercent", defaultRate: 0.05, amountUSD: 1000 },
-    { name: "Grand", oddsElementId: "grandJackpotOdds", customId: "grandJackpotCustomOdds", winInputId: "grandJackpotWinPercent", lossInputId: "grandJackpotLossPercent", defaultRate: 0.01, amountUSD: 10000 },
+    { name: "Mini", oddsElementId: "miniJackpotOdds", customId: "miniJackpotCustomOdds", winInputId: "miniJackpotWinPercent", lossInputId: "miniJackpotLossPercent", defaultRate: 0.001, amountUSD: 10 },
+    { name: "Minor", oddsElementId: "minorJackpotOdds", customId: "minorJackpotCustomOdds", winInputId: "minorJackpotWinPercent", lossInputId: "minorJackpotLossPercent", defaultRate: 0.0002, amountUSD: 100 },
+    { name: "Major", oddsElementId: "majorJackpotOdds", customId: "majorJackpotCustomOdds", winInputId: "majorJackpotWinPercent", lossInputId: "majorJackpotLossPercent", defaultRate: 0.00005, amountUSD: 1000 },
+    { name: "Grand", oddsElementId: "grandJackpotOdds", customId: "grandJackpotCustomOdds", winInputId: "grandJackpotWinPercent", lossInputId: "grandJackpotLossPercent", defaultRate: 0.00001, amountUSD: 10000 },
 ];
 
 const ROWS = 5;
@@ -289,9 +289,9 @@ function getTargetSpinWinRate() {
 function getTargetJackpotRate(tier) {
     const select = document.getElementById(tier.oddsElementId);
     const value = select?.value === "custom"
-        ? Number.parseInt(document.getElementById(tier.winInputId)?.value, 10) / 100
+        ? Number.parseFloat(document.getElementById(tier.winInputId)?.value) / 100
         : Number.parseFloat(select?.value ?? tier.defaultRate);
-    return Number.isFinite(value) ? Math.min(1, Math.max(0.01, value)) : tier.defaultRate;
+    return Number.isFinite(value) ? Math.min(1, Math.max(0.00001, value)) : tier.defaultRate;
 }
 
 function syncCustomJackpotOdds(tier, changedSide = null) {
@@ -303,11 +303,11 @@ function syncCustomJackpotOdds(tier, changedSide = null) {
     customRow.hidden = select.value !== "custom";
     if (select.value !== "custom" || !changedSide) return;
     if (changedSide === "win") {
-        const win = Math.min(100, Math.max(1, Number.parseInt(winInput.value, 10) || 1));
+        const win = Math.min(100, Math.max(0.001, Number.parseFloat(winInput.value) || 0.001));
         winInput.value = String(win);
         lossInput.value = String(100 - win);
     } else {
-        const loss = Math.min(99, Math.max(0, Number.parseInt(lossInput.value, 10) || 0));
+        const loss = Math.min(99.999, Math.max(0, Number.parseFloat(lossInput.value) || 0));
         lossInput.value = String(loss);
         winInput.value = String(100 - loss);
     }
@@ -317,7 +317,7 @@ function syncCustomJackpotOdds(tier, changedSide = null) {
 function resetCustomJackpotOdds() {
     for (const tier of JACKPOT_TIERS) {
         document.getElementById(tier.oddsElementId).value = String(tier.defaultRate);
-        const defaultWinPercent = Math.round(tier.defaultRate * 100);
+        const defaultWinPercent = tier.defaultRate * 100;
         document.getElementById(tier.winInputId).value = String(defaultWinPercent);
         document.getElementById(tier.lossInputId).value = String(100 - defaultWinPercent);
         syncCustomJackpotOdds(tier);
