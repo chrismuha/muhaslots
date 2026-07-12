@@ -141,11 +141,11 @@
                         <div class="select jackpot-odds-setting">
                             <label for="miniJackpotOdds">Mini Jackpot Odds</label>
                             <select id="miniJackpotOdds">
-                                <option value="0.0001">0.01% Jackpot / 99.99% No Jackpot</option>
-                                <option value="0.0005">0.05% Jackpot / 99.95% No Jackpot</option>
-                                <option value="0.001" selected>0.1% Jackpot / 99.9% No Jackpot</option>
-                                <option value="0.005">0.5% Jackpot / 99.5% No Jackpot</option>
-                                <option value="0.01">1% Jackpot / 99% No Jackpot</option>
+                                <option value="0.0001">1 in 10,000 spins</option>
+                                <option value="0.0005">1 in 2,000 spins</option>
+                                <option value="0.001" selected>1 in 1,000 spins</option>
+                                <option value="0.005">1 in 200 spins</option>
+                                <option value="0.01">1 in 100 spins</option>
                                 <option value="custom">Custom…</option>
                             </select>
                             <div id="miniJackpotCustomOdds" class="custom-odds-row" hidden>
@@ -157,11 +157,11 @@
                         <div class="select jackpot-odds-setting">
                             <label for="minorJackpotOdds">Minor Jackpot Odds</label>
                             <select id="minorJackpotOdds">
-                                <option value="0.0001">0.01% Jackpot / 99.99% No Jackpot</option>
-                                <option value="0.0002" selected>0.02% Jackpot / 99.98% No Jackpot</option>
-                                <option value="0.0005">0.05% Jackpot / 99.95% No Jackpot</option>
-                                <option value="0.001">0.1% Jackpot / 99.9% No Jackpot</option>
-                                <option value="0.005">0.5% Jackpot / 99.5% No Jackpot</option>
+                                <option value="0.0001">1 in 10,000 spins</option>
+                                <option value="0.0002" selected>1 in 5,000 spins</option>
+                                <option value="0.0005">1 in 2,000 spins</option>
+                                <option value="0.001">1 in 1,000 spins</option>
+                                <option value="0.005">1 in 200 spins</option>
                                 <option value="custom">Custom…</option>
                             </select>
                             <div id="minorJackpotCustomOdds" class="custom-odds-row" hidden>
@@ -173,11 +173,11 @@
                         <div class="select jackpot-odds-setting">
                             <label for="majorJackpotOdds">Major Jackpot Odds</label>
                             <select id="majorJackpotOdds">
-                                <option value="0.00001">0.001% Jackpot / 99.999% No Jackpot</option>
-                                <option value="0.00005" selected>0.005% Jackpot / 99.995% No Jackpot</option>
-                                <option value="0.0001">0.01% Jackpot / 99.99% No Jackpot</option>
-                                <option value="0.0005">0.05% Jackpot / 99.95% No Jackpot</option>
-                                <option value="0.001">0.1% Jackpot / 99.9% No Jackpot</option>
+                                <option value="0.00001">1 in 100,000 spins</option>
+                                <option value="0.00005" selected>1 in 20,000 spins</option>
+                                <option value="0.0001">1 in 10,000 spins</option>
+                                <option value="0.0005">1 in 2,000 spins</option>
+                                <option value="0.001">1 in 1,000 spins</option>
                                 <option value="custom">Custom…</option>
                             </select>
                             <div id="majorJackpotCustomOdds" class="custom-odds-row" hidden>
@@ -189,11 +189,11 @@
                         <div class="select jackpot-odds-setting">
                             <label for="grandJackpotOdds">Grand Jackpot Odds</label>
                             <select id="grandJackpotOdds">
-                                <option value="0.00001" selected>0.001% Jackpot / 99.999% No Jackpot</option>
-                                <option value="0.00005">0.005% Jackpot / 99.995% No Jackpot</option>
-                                <option value="0.0001">0.01% Jackpot / 99.99% No Jackpot</option>
-                                <option value="0.0005">0.05% Jackpot / 99.95% No Jackpot</option>
-                                <option value="0.001">0.1% Jackpot / 99.9% No Jackpot</option>
+                                <option value="0.00001" selected>1 in 100,000 spins</option>
+                                <option value="0.00005">1 in 20,000 spins</option>
+                                <option value="0.0001">1 in 10,000 spins</option>
+                                <option value="0.0005">1 in 2,000 spins</option>
+                                <option value="0.001">1 in 1,000 spins</option>
                                 <option value="custom">Custom…</option>
                             </select>
                             <div id="grandJackpotCustomOdds" class="custom-odds-row" hidden>
@@ -271,7 +271,7 @@
                     <p class="overlay-note"><strong>Lines:</strong> Number of active paylines (1-10). More lines means more chances to win, but higher total bet.</p>
                     <p class="overlay-note"><strong>Bet Per Line:</strong> Credits wagered on each active line. Increasing this raises both total bet and possible payout.</p>
                     <p class="overlay-note"><strong>Win Odds:</strong> Sets the target chance that a spin resolves as a win. Winning payout amounts still come from the paytable.</p>
-                    <p class="overlay-note"><strong>Jackpot Odds:</strong> Each tier offers 1%, 5%, 10%, 20%, 30%, or Custom. Custom uses linked whole-number Win and Loss fields totaling 100%, allows 1%–100% win odds, and clears on Reset Session or page reload.</p>
+                    <p class="overlay-note"><strong>Jackpot Odds:</strong> Each tier offers realistic preset odds shown as “1 in N spins,” plus Custom percentage controls. Custom odds clear on Reset Session or page reload.</p>
                     <p class="overlay-note"><strong>Settings:</strong> Opens the paginated settings dialog. Use Show this setting on the home screen to pin individual settings. Denomination is pinned by default.</p>
                     <p class="overlay-note"><strong>Adjust Credit + ▲/▼:</strong> Sets how much credit to add/remove per click, scaled by denomination.</p>
                     <p class="overlay-note"><strong>Skip Winning Highlight Delay:</strong> Removes the auto-spin pause after winning reels are highlighted.</p>
