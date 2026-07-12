@@ -1593,6 +1593,48 @@ body.overlay-open {
   }
 }
 
+/* Center jackpot results with equal spacing around the reel board. */
+.reels {
+  padding: clamp(8px, 1vw, 12px);
+}
+
+.cell.win {
+  transform: none;
+}
+
+.reels .cell.jackpot-win {
+  padding: clamp(8px, 1vw, 12px);
+  overflow: hidden;
+}
+
+.jackpot-chip {
+  width: 100%;
+  height: 100%;
+  max-width: 10rem;
+  max-height: 4.75rem;
+  min-width: 0;
+  min-height: 0;
+  margin: auto;
+  box-sizing: border-box;
+}
+
+@keyframes muha-jackpot-win {
+  0% {
+    transform: scale(.9) rotate(-2deg);
+    filter: brightness(.94);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.3), 0 0 7px var(--jackpot-color);
+  }
+  55% {
+    transform: scale(1.035) rotate(1deg);
+    filter: brightness(1.2);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1.06);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.55), 0 0 24px var(--jackpot-color);
+  }
+}
+
 @media (max-width: 520px) {
   .jackpot-pill { flex-direction: column; gap: 1px; }
 }
