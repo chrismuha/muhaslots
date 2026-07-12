@@ -909,7 +909,7 @@ function setupSettingsOverlay() {
     if (!Object.prototype.hasOwnProperty.call(settingsPins, "denomination")) {
         settingsPins.denomination = true;
     }
-    if (!Object.prototype.hasOwnProperty.call(settingsPins, "adjustMoney")) settingsPins.adjustMoney = true;
+    settingsPins.adjustMoney = true;
     if (!Object.prototype.hasOwnProperty.call(settingsPins, "creditsInserted")) settingsPins.creditsInserted = true;
     saveSettingsPins();
 
