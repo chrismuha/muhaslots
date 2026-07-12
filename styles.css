@@ -1642,3 +1642,49 @@ body.overlay-open {
 @media (prefers-reduced-motion: reduce) {
   .jackpot-chip { animation: none; }
 }
+
+.custom-odds-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.custom-odds-row[hidden] { display: none; }
+.custom-odds-row label { margin: 0; }
+.custom-odds-row input { width: 100%; margin-top: 4px; }
+
+.settings-panel {
+  width: min(620px, calc(100vw - 28px));
+  height: auto;
+  min-height: 390px;
+  grid-template-rows: auto auto auto minmax(150px, auto) auto;
+}
+
+.settings-toolbar {
+  display: grid;
+  grid-template-columns: 120px 1fr 120px;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-page-count,
+.settings-page-title { text-align: center; }
+.settings-page-title { color: var(--accent2); margin: 8px 0 0; }
+.settings-stage { display: grid; align-items: start; min-height: 150px; }
+.settings-stage > * { width: 100%; margin: 0; }
+.settings-pin-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px;
+  border-top: 1px solid rgba(165,255,125,.28);
+}
+.settings-stash[hidden] { display: none; }
+
+@media (max-width: 520px) {
+  .settings-toolbar { grid-template-columns: 1fr 1fr; }
+  .settings-page-count { grid-column: 1 / -1; grid-row: 1; }
+}

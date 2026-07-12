@@ -25,10 +25,10 @@ const PAYTABLE = {
 };
 
 const JACKPOT_TIERS = [
-    { name: "Mini", oddsElementId: "miniJackpotOdds", defaultRate: 0.1, amountUSD: 10 },
-    { name: "Minor", oddsElementId: "minorJackpotOdds", defaultRate: 0.1, amountUSD: 100 },
-    { name: "Major", oddsElementId: "majorJackpotOdds", defaultRate: 0.1, amountUSD: 1000 },
-    { name: "Grand", oddsElementId: "grandJackpotOdds", defaultRate: 0.1, amountUSD: 10000 },
+    { name: "Mini", oddsElementId: "miniJackpotOdds", customId: "miniJackpotCustomOdds", winInputId: "miniJackpotWinPercent", lossInputId: "miniJackpotLossPercent", defaultRate: 0.01, amountUSD: 10 },
+    { name: "Minor", oddsElementId: "minorJackpotOdds", customId: "minorJackpotCustomOdds", winInputId: "minorJackpotWinPercent", lossInputId: "minorJackpotLossPercent", defaultRate: 0.01, amountUSD: 100 },
+    { name: "Major", oddsElementId: "majorJackpotOdds", customId: "majorJackpotCustomOdds", winInputId: "majorJackpotWinPercent", lossInputId: "majorJackpotLossPercent", defaultRate: 0.01, amountUSD: 1000 },
+    { name: "Grand", oddsElementId: "grandJackpotOdds", customId: "grandJackpotCustomOdds", winInputId: "grandJackpotWinPercent", lossInputId: "grandJackpotLossPercent", defaultRate: 0.01, amountUSD: 10000 },
 ];
 
 const ROWS = 5;
@@ -83,6 +83,7 @@ const creditDownBtn = document.getElementById("creditDown");
 const spinBtn = document.getElementById("spin");
 const maxBtn = document.getElementById("max");
 const resetSessionBtn = document.getElementById("resetSession");
+const settingsButtonEl = document.getElementById("settingsButton");
 const autoSpinHintEl = document.getElementById("autoSpinHint");
 const payInfoBtn = document.getElementById("payInfo");
 const previewOverlayEl = document.getElementById("previewOverlay");
@@ -142,6 +143,11 @@ let suppressSpinClick = false;
 let lastTouchEndAt = 0;
 let pendingLastChanceSpinUSD = 0;
 let totalBetDisplayOverrideUSD = null;
+let settingsOverlayEl = null;
+let settingsPageIndex = 0;
+let settingsItems = [];
+let settingsPins = {};
+const SETTINGS_PIN_STORAGE_KEY = "muhaSlots.settingsPins.v1";
 
 // Session Winnings State
 let sessionWinningsUSD = 0;
@@ -279,8 +285,40 @@ function getTargetSpinWinRate() {
 }
 
 function getTargetJackpotRate(tier) {
-    const value = Number.parseFloat(document.getElementById(tier.oddsElementId)?.value ?? tier.defaultRate);
-    return Number.isFinite(value) ? Math.min(0.9, Math.max(0.1, value)) : tier.defaultRate;
+    const select = document.getElementById(tier.oddsElementId);
+    const value = select?.value === "custom"
+        ? Number.parseInt(document.getElementById(tier.winInputId)?.value, 10) / 100
+        : Number.parseFloat(select?.value ?? tier.defaultRate);
+    return Number.isFinite(value) ? Math.min(1, Math.max(0.01, value)) : tier.defaultRate;
+}
+
+function syncCustomJackpotOdds(tier, changedSide = null) {
+    const select = document.getElementById(tier.oddsElementId);
+    const customRow = document.getElementById(tier.customId);
+    const winInput = document.getElementById(tier.winInputId);
+    const lossInput = document.getElementById(tier.lossInputId);
+    if (!select || !customRow || !winInput || !lossInput) return;
+    customRow.hidden = select.value !== "custom";
+    if (select.value !== "custom" || !changedSide) return;
+    if (changedSide === "win") {
+        const win = Math.min(100, Math.max(1, Number.parseInt(winInput.value, 10) || 1));
+        winInput.value = String(win);
+        lossInput.value = String(100 - win);
+    } else {
+        const loss = Math.min(99, Math.max(0, Number.parseInt(lossInput.value, 10) || 0));
+        lossInput.value = String(loss);
+        winInput.value = String(100 - loss);
+    }
+    updateGameOddsDisplay();
+}
+
+function resetCustomJackpotOdds() {
+    for (const tier of JACKPOT_TIERS) {
+        document.getElementById(tier.oddsElementId).value = String(tier.defaultRate);
+        document.getElementById(tier.winInputId).value = "1";
+        document.getElementById(tier.lossInputId).value = "99";
+        syncCustomJackpotOdds(tier);
+    }
 }
 
 function choiceWeighted(weightsMap) {
@@ -623,7 +661,8 @@ function togglePreviewOverlay(force) {
 function syncOverlayOpenState() {
     const anyOpen =
         (previewOverlayEl && !previewOverlayEl.hidden) ||
-        (lastChanceOverlayEl && !lastChanceOverlayEl.hidden);
+        (lastChanceOverlayEl && !lastChanceOverlayEl.hidden) ||
+        (settingsOverlayEl && !settingsOverlayEl.hidden);
     document.body.classList.toggle("overlay-open", Boolean(anyOpen));
 }
 
@@ -760,6 +799,12 @@ function bindRapidPress(button, action, options = {}) {
 function handleEsc(e) {
     if (e.key !== "Escape") return;
 
+    if (settingsOverlayEl && !settingsOverlayEl.hidden) {
+        closeSettingsOverlay();
+        settingsButtonEl?.focus();
+        return;
+    }
+
     if (lastChanceOverlayEl && !lastChanceOverlayEl.hidden) {
         closeLastChanceOverlay({ restoreFocus: true });
         return;
@@ -769,6 +814,122 @@ function handleEsc(e) {
         togglePreviewOverlay(false);
         payInfoBtn?.focus();
     }
+}
+
+function getSettingsDefinitions() {
+    return [
+        { key: "adjustMoney", title: "Adjust Money", element: creditStepEl?.closest(".credit-controls") },
+        { key: "sessionStats", title: "Session Stats Display", element: sessionStatDisplayEl?.closest(".select") },
+        { key: "lines", title: "Lines", element: linesEl?.closest(".select") },
+        { key: "bet", title: "Bet Per Line", element: betEl?.closest(".select") },
+        { key: "winOdds", title: "Regular Win Odds", element: winOddsEl?.closest(".select") },
+        ...JACKPOT_TIERS.map((tier) => ({
+            key: `${tier.name.toLowerCase()}JackpotOdds`,
+            title: `${tier.name} Jackpot Odds`,
+            element: document.getElementById(tier.oddsElementId)?.closest(".select"),
+        })),
+        { key: "maxBetCredits", title: "Max Bet Credits", element: maxBetUsesAvailableCreditsEl?.closest(".checkbox-setting") },
+        { key: "winDelay", title: "Winning Highlight Delay", element: skipWinAnimationDelayEl?.closest(".checkbox-setting") },
+    ].filter((setting) => setting.element);
+}
+
+function saveSettingsPins() {
+    try {
+        localStorage.setItem(SETTINGS_PIN_STORAGE_KEY, JSON.stringify(settingsPins));
+    } catch {
+        // Pinning still works for the current page when storage is unavailable.
+    }
+}
+
+function placeSettingsOnHome() {
+    for (const setting of settingsItems) {
+        if (settingsPins[setting.key]) {
+            setting.marker.parentNode.insertBefore(setting.element, setting.marker.nextSibling);
+        } else {
+            settingsOverlayEl.querySelector(".settings-stash").appendChild(setting.element);
+        }
+    }
+}
+
+function showSettingsPage(index) {
+    if (!settingsItems.length) return;
+    const stash = settingsOverlayEl.querySelector(".settings-stash");
+    const stage = settingsOverlayEl.querySelector(".settings-stage");
+    const current = stage.firstElementChild;
+    if (current) stash.appendChild(current);
+    settingsPageIndex = (index + settingsItems.length) % settingsItems.length;
+    const setting = settingsItems[settingsPageIndex];
+    stage.appendChild(setting.element);
+    settingsOverlayEl.querySelector(".settings-page-title").textContent = setting.title;
+    settingsOverlayEl.querySelector(".settings-page-count").textContent =
+        `Page ${settingsPageIndex + 1} of ${settingsItems.length}`;
+    settingsOverlayEl.querySelector(".settings-pin-toggle").checked = Boolean(settingsPins[setting.key]);
+}
+
+function openSettingsOverlay() {
+    if (!settingsOverlayEl) return;
+    settingsOverlayEl.hidden = false;
+    settingsButtonEl?.setAttribute("aria-expanded", "true");
+    showSettingsPage(settingsPageIndex);
+    syncOverlayOpenState();
+}
+
+function closeSettingsOverlay() {
+    if (!settingsOverlayEl) return;
+    const stageSetting = settingsOverlayEl.querySelector(".settings-stage").firstElementChild;
+    if (stageSetting) settingsOverlayEl.querySelector(".settings-stash").appendChild(stageSetting);
+    placeSettingsOnHome();
+    settingsOverlayEl.hidden = true;
+    settingsButtonEl?.setAttribute("aria-expanded", "false");
+    syncOverlayOpenState();
+}
+
+function setupSettingsOverlay() {
+    try {
+        settingsPins = JSON.parse(localStorage.getItem(SETTINGS_PIN_STORAGE_KEY) || "{}");
+    } catch {
+        settingsPins = {};
+    }
+
+    settingsOverlayEl = document.createElement("div");
+    settingsOverlayEl.className = "overlay settings-overlay";
+    settingsOverlayEl.hidden = true;
+    settingsOverlayEl.innerHTML = `
+        <div class="overlay-panel settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsOverlayTitle">
+            <div class="overlay-head">
+                <h3 id="settingsOverlayTitle">Game Settings</h3>
+                <button type="button" class="overlay-close settings-close">Close</button>
+            </div>
+            <div class="settings-toolbar">
+                <button type="button" class="settings-prev" aria-label="Previous setting">← Previous</button>
+                <span class="settings-page-count"></span>
+                <button type="button" class="settings-next" aria-label="Next setting">Next →</button>
+            </div>
+            <h4 class="settings-page-title"></h4>
+            <div class="settings-stage"></div>
+            <label class="settings-pin-row">
+                <input type="checkbox" class="settings-pin-toggle" />
+                <span>Show this setting on the home screen</span>
+            </label>
+            <div class="settings-stash" hidden></div>
+        </div>`;
+    document.body.appendChild(settingsOverlayEl);
+
+    settingsItems = getSettingsDefinitions().map((setting) => {
+        const marker = document.createComment(`settings-home-${setting.key}`);
+        setting.element.parentNode.insertBefore(marker, setting.element);
+        return { ...setting, marker };
+    });
+
+    settingsOverlayEl.querySelector(".settings-close").addEventListener("click", closeSettingsOverlay);
+    settingsOverlayEl.querySelector(".settings-prev").addEventListener("click", () => showSettingsPage(settingsPageIndex - 1));
+    settingsOverlayEl.querySelector(".settings-next").addEventListener("click", () => showSettingsPage(settingsPageIndex + 1));
+    settingsOverlayEl.querySelector(".settings-pin-toggle").addEventListener("change", (event) => {
+        settingsPins[settingsItems[settingsPageIndex].key] = event.target.checked;
+        saveSettingsPins();
+    });
+    settingsButtonEl?.addEventListener("click", openSettingsOverlay);
+    placeSettingsOnHome();
 }
 
 // Credit step controls (▲ / ▼)
@@ -1005,6 +1166,8 @@ function resetSessionState() {
     netSessionWinningsUSD = 0;
     netSessionLossesUSD = 0;
     actualSessionNetUSD = 0;
+    resetCustomJackpotOdds();
+    updateGameOddsDisplay();
 
     if (lastChanceOverlayEl && !lastChanceOverlayEl.hidden) {
         closeLastChanceOverlay();
@@ -1256,7 +1419,14 @@ denomEl.addEventListener("change", onConfigChange);
 linesEl.addEventListener("change", onConfigChange);
 betEl.addEventListener("change", onConfigChange);
 winOddsEl?.addEventListener("change", onConfigChange);
-JACKPOT_TIERS.forEach((tier) => document.getElementById(tier.oddsElementId)?.addEventListener("change", onConfigChange));
+JACKPOT_TIERS.forEach((tier) => {
+    document.getElementById(tier.oddsElementId)?.addEventListener("change", () => {
+        syncCustomJackpotOdds(tier);
+        onConfigChange();
+    });
+    document.getElementById(tier.winInputId)?.addEventListener("input", () => syncCustomJackpotOdds(tier, "win"));
+    document.getElementById(tier.lossInputId)?.addEventListener("input", () => syncCustomJackpotOdds(tier, "loss"));
+});
 maxBetUsesAvailableCreditsEl?.addEventListener("change", onConfigChange);
 skipWinAnimationDelayEl?.addEventListener("change", updateAutoSpinHint);
 sessionStatDisplayEl?.addEventListener("change", updateSessionStatsVisibility);
@@ -1337,7 +1507,9 @@ document.addEventListener("keydown", (e) => {
     );
     if (isTypingField) return;
 
-    const overlayOpen = previewOverlayEl && !previewOverlayEl.hidden;
+    const overlayOpen =
+        (previewOverlayEl && !previewOverlayEl.hidden) ||
+        (settingsOverlayEl && !settingsOverlayEl.hidden);
     const lastChanceOpen = lastChanceOverlayEl && !lastChanceOverlayEl.hidden;
     const isDesktop = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
     const isInteractiveControl = target?.closest?.("button, a, [role='button']");
@@ -1379,6 +1551,7 @@ document.addEventListener("keyup", (e) => {
 
 // Init
 (function init() {
+    setupSettingsOverlay();
     const grid = createGrid(() => randomSymbol());
     renderGrid(grid);
     updateTotals();
