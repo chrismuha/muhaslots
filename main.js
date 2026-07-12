@@ -280,8 +280,8 @@ function getTargetSpinWinRate() {
 }
 
 function getTargetJackpotRate() {
-    const value = Number.parseFloat(jackpotOddsEl?.value ?? "0.01");
-    return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0.01;
+    const value = Number.parseFloat(jackpotOddsEl?.value ?? "0.5");
+    return Number.isFinite(value) ? Math.min(0.9, Math.max(0.1, value)) : 0.5;
 }
 
 function choiceWeighted(weightsMap) {
