@@ -55,13 +55,13 @@
                         <div class="select">
                             <label for="sessionStatDisplay">Session Stats Display</label>
                             <select id="sessionStatDisplay">
-                                <option value="both" selected>Both</option>
+                                <option value="both">Both</option>
                                 <option value="winnings">Winnings Only</option>
                                 <option value="losses">Losses Only</option>
                                 <option value="netBoth">Both Net</option>
                                 <option value="netWinnings">Net Winnings Only</option>
                                 <option value="netLosses">Net Losses Only</option>
-                                <option value="actualNetBoth">Both Actual Net</option>
+                                <option value="actualNetBoth" selected>Both Actual Net</option>
                                 <option value="actualNetWinnings">Actual Net Winnings Only</option>
                                 <option value="actualNetLosses">Actual Net Losses Only</option>
                             </select>
@@ -252,7 +252,7 @@
                     <p>Payout = multiplier x bet per line (credits) x denomination ($).</p>
                     <p>Only matching symbols from the left count. 3, 4, or 5 in a row on an active payline pays.</p>
                     <p>The wild symbol (<span class="icon-container" aria-hidden="true">🃏</span>) substitutes for any regular symbol from the left. All-wild hits pay the wild row.</p>
-                    <p>Mini, Minor, Major, and Grand each have their own odds and are rolled independently from regular Win Odds and from one another. Any combination can occur by itself or with a regular win. A jackpot chip appears only when its corresponding roll succeeds.</p>
+                    <p>Jackpots use a shared event that is independent from regular Win Odds. The highest selected Jackpot Odds value sets the chance that at least one jackpot occurs, while each tier retains its selected chance and multiple tiers can be awarded together. When every tier is set to 1%, the overall jackpot chance is 1% per spin.</p>
                     <p>Fixed awards: Mini $10, Minor $100, Major $1,000, and Grand $10,000.</p>
                     <h4>Settings Guide</h4>
                     <p class="overlay-note"><strong>Session Stats Display:</strong> Chooses which stat boxes are visible (regular session totals, Net totals, or Actual Net totals).</p>

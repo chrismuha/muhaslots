@@ -449,7 +449,15 @@ function createCell(symbol, isWinning = false) {
 }
 
 function resolveJackpotWins() {
-    return JACKPOT_TIERS.filter((tier) => Math.random() < getTargetJackpotRate(tier));
+    const jackpotTiers = JACKPOT_TIERS.map((tier) => ({
+        tier,
+        rate: getTargetJackpotRate(tier)
+    }));
+    const jackpotRate = Math.max(...jackpotTiers.map(({ rate }) => rate));
+    if (Math.random() >= jackpotRate) return [];
+    return jackpotTiers
+        .filter(({ rate }) => Math.random() < rate / jackpotRate)
+        .map(({ tier }) => tier);
 }
 
 function renderOutcomeGrid(grid, winningPositions, jackpotWins) {
@@ -1081,7 +1089,7 @@ function updateActualSessionLossesDisplay() {
 }
 
 function updateSessionStatsVisibility() {
-    const mode = sessionStatDisplayEl?.value || "both";
+    const mode = sessionStatDisplayEl?.value || "actualNetBoth";
     const winningsBox = document.getElementById("sessionWinningsBox");
     const lossesBox = document.getElementById("sessionLossesBox");
     const netWinningsBox = document.getElementById("netSessionWinningsBox");
@@ -1097,7 +1105,7 @@ function updateSessionStatsVisibility() {
         !actualLossesBox
     ) return;
 
-    const selected = SESSION_VISIBILITY_BY_MODE[mode] || SESSION_VISIBILITY_BY_MODE.both;
+    const selected = SESSION_VISIBILITY_BY_MODE[mode] || SESSION_VISIBILITY_BY_MODE.actualNetBoth;
 
     winningsBox.hidden = !selected.winnings;
     lossesBox.hidden = !selected.losses;
