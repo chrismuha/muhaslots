@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>Neon Slots</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-    <link rel="stylesheet" href="styles.css?v=20260712-6" />
+    <link rel="stylesheet" href="styles.css?v=20260712-7" />
 </head>
 
 <body>
@@ -134,14 +134,59 @@
                             </select>
                         </div>
 
-                        <div class="select">
-                            <label for="jackpotOdds">Jackpot Odds (independent)</label>
-                            <select id="jackpotOdds">
-                                <option value="0.10">10% Jackpot / 90% No Jackpot</option>
+                        <div class="select jackpot-odds-setting">
+                            <label for="miniJackpotOdds">Mini Jackpot Odds</label>
+                            <select id="miniJackpotOdds">
+                                <option value="0.10" selected>10% Jackpot / 90% No Jackpot</option>
                                 <option value="0.20">20% Jackpot / 80% No Jackpot</option>
                                 <option value="0.30">30% Jackpot / 70% No Jackpot</option>
                                 <option value="0.40">40% Jackpot / 60% No Jackpot</option>
-                                <option value="0.50" selected>50% Jackpot / 50% No Jackpot</option>
+                                <option value="0.50">50% Jackpot / 50% No Jackpot</option>
+                                <option value="0.60">60% Jackpot / 40% No Jackpot</option>
+                                <option value="0.70">70% Jackpot / 30% No Jackpot</option>
+                                <option value="0.80">80% Jackpot / 20% No Jackpot</option>
+                                <option value="0.90">90% Jackpot / 10% No Jackpot</option>
+                            </select>
+                        </div>
+
+                        <div class="select jackpot-odds-setting">
+                            <label for="minorJackpotOdds">Minor Jackpot Odds</label>
+                            <select id="minorJackpotOdds">
+                                <option value="0.10" selected>10% Jackpot / 90% No Jackpot</option>
+                                <option value="0.20">20% Jackpot / 80% No Jackpot</option>
+                                <option value="0.30">30% Jackpot / 70% No Jackpot</option>
+                                <option value="0.40">40% Jackpot / 60% No Jackpot</option>
+                                <option value="0.50">50% Jackpot / 50% No Jackpot</option>
+                                <option value="0.60">60% Jackpot / 40% No Jackpot</option>
+                                <option value="0.70">70% Jackpot / 30% No Jackpot</option>
+                                <option value="0.80">80% Jackpot / 20% No Jackpot</option>
+                                <option value="0.90">90% Jackpot / 10% No Jackpot</option>
+                            </select>
+                        </div>
+
+                        <div class="select jackpot-odds-setting">
+                            <label for="majorJackpotOdds">Major Jackpot Odds</label>
+                            <select id="majorJackpotOdds">
+                                <option value="0.10" selected>10% Jackpot / 90% No Jackpot</option>
+                                <option value="0.20">20% Jackpot / 80% No Jackpot</option>
+                                <option value="0.30">30% Jackpot / 70% No Jackpot</option>
+                                <option value="0.40">40% Jackpot / 60% No Jackpot</option>
+                                <option value="0.50">50% Jackpot / 50% No Jackpot</option>
+                                <option value="0.60">60% Jackpot / 40% No Jackpot</option>
+                                <option value="0.70">70% Jackpot / 30% No Jackpot</option>
+                                <option value="0.80">80% Jackpot / 20% No Jackpot</option>
+                                <option value="0.90">90% Jackpot / 10% No Jackpot</option>
+                            </select>
+                        </div>
+
+                        <div class="select jackpot-odds-setting">
+                            <label for="grandJackpotOdds">Grand Jackpot Odds</label>
+                            <select id="grandJackpotOdds">
+                                <option value="0.10" selected>10% Jackpot / 90% No Jackpot</option>
+                                <option value="0.20">20% Jackpot / 80% No Jackpot</option>
+                                <option value="0.30">30% Jackpot / 70% No Jackpot</option>
+                                <option value="0.40">40% Jackpot / 60% No Jackpot</option>
+                                <option value="0.50">50% Jackpot / 50% No Jackpot</option>
                                 <option value="0.60">60% Jackpot / 40% No Jackpot</option>
                                 <option value="0.70">70% Jackpot / 30% No Jackpot</option>
                                 <option value="0.80">80% Jackpot / 20% No Jackpot</option>
@@ -202,7 +247,7 @@
                     <p>Payout = multiplier x bet per line (credits) x denomination ($).</p>
                     <p>Only matching symbols from the left count. 3, 4, or 5 in a row on an active payline pays.</p>
                     <p>The wild symbol (<span class="icon-container" aria-hidden="true">🃏</span>) substitutes for any regular symbol from the left. All-wild hits pay the wild row.</p>
-                    <p>Jackpots are rolled independently from regular Win Odds, so a jackpot can occur by itself or with a regular win. Jackpot chips appear only when that separate roll succeeds.</p>
+                    <p>Mini, Minor, Major, and Grand each have their own odds and are rolled independently from regular Win Odds and from one another. Any combination can occur by itself or with a regular win. A jackpot chip appears only when its corresponding roll succeeds.</p>
                     <p>Fixed awards: Mini $10, Minor $100, Major $1,000, and Grand $10,000.</p>
                     <h4>Settings Guide</h4>
                     <p class="overlay-note"><strong>Session Stats Display:</strong> Chooses which stat boxes are visible (regular session totals, Net totals, or Actual Net totals).</p>
@@ -217,7 +262,7 @@
                     <p class="overlay-note"><strong>Lines:</strong> Number of active paylines (1-10). More lines means more chances to win, but higher total bet.</p>
                     <p class="overlay-note"><strong>Bet Per Line:</strong> Credits wagered on each active line. Increasing this raises both total bet and possible payout.</p>
                     <p class="overlay-note"><strong>Win Odds:</strong> Sets the target chance that a spin resolves as a win. Winning payout amounts still come from the paytable.</p>
-                    <p class="overlay-note"><strong>Jackpot Odds:</strong> Sets the separate chance of triggering a jackpot and does not change regular Win Odds.</p>
+                    <p class="overlay-note"><strong>Jackpot Odds:</strong> Mini, Minor, Major, and Grand each have a separate 10%–90% chance and do not change regular Win Odds.</p>
                     <p class="overlay-note"><strong>Adjust Credit + ▲/▼:</strong> Sets how much credit to add/remove per click, scaled by denomination.</p>
                     <p class="overlay-note"><strong>Skip Winning Highlight Delay:</strong> Removes the auto-spin pause after winning reels are highlighted.</p>
                     <p class="overlay-note"><strong>Spin:</strong> Plays one round using current settings and deducts the total bet first. On desktop, tap Spacebar for one spin or hold it for auto spin; Spacebar does not scroll the page.</p>
@@ -301,7 +346,7 @@
         </div>
     </div>
 
-    <script src="main.js?v=20260712-6"></script>
+    <script src="main.js?v=20260712-7"></script>
 </body>
 
 </html>
