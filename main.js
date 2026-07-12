@@ -206,7 +206,7 @@ function syncCreditStepFieldMode() {
 function isValidCreditStepValue(rawValue) {
     const value = String(rawValue ?? "").trim();
     if (!/^[1-9]\d*$/.test(value)) return false;
-    return Number.parseInt(value, 10) % 25 === 0;
+    return true;
 }
 
 function isPotentialCreditStepValue(rawValue) {
@@ -216,9 +216,9 @@ function isPotentialCreditStepValue(rawValue) {
 }
 
 function normalizeCreditStepValue(rawValue) {
-    if (!isValidCreditStepValue(rawValue)) return 100;
+    if (!isValidCreditStepValue(rawValue)) return 1;
     const parsed = Number.parseFloat(String(rawValue).trim());
-    if (!Number.isFinite(parsed) || parsed <= 0) return 100;
+    if (!Number.isFinite(parsed) || parsed <= 0) return 1;
     return Math.max(1, Math.round(parsed));
 }
 
@@ -230,8 +230,7 @@ function formatCreditStepValue(value) {
 function updateCreditStepEffect() {
     if (!creditStepEffectEl || !creditStepEl) return;
     const creditStep = normalizeCreditStepValue(creditStepEl.value);
-    const dollarAmount = roundUSD(creditStep / 100);
-    creditStepEffectEl.textContent = `Each arrow press: ${formatCreditStepValue(creditStep)} cent${creditStep === 1 ? "" : "s"} = ${fmtUSD(dollarAmount)}`;
+    creditStepEffectEl.textContent = `Each arrow press: ${fmtUSD(creditStep)}`;
 }
 
 function getAvailableCreditsBetUSD() {
@@ -274,7 +273,7 @@ function syncCreditStepInput(rawValue) {
         updateCreditStepEffect();
         return;
     }
-    const fallbackValue = formatCreditStepValue(creditStepEl.dataset.lastValidValue || "100");
+    const fallbackValue = formatCreditStepValue(creditStepEl.dataset.lastValidValue || "1");
     creditStepEl.value = fallbackValue;
     creditStepEl.dataset.lastValidValue = fallbackValue;
     updateCreditStepEffect();
@@ -833,11 +832,11 @@ function handleEsc(e) {
 
 function getSettingsDefinitions() {
     return [
+        { key: "adjustMoney", title: "Adjust Money", element: creditStepEl?.closest(".credit-controls") },
         { key: "denomination", title: "Denomination", element: denomEl?.closest(".select") },
         { key: "lines", title: "Lines", element: linesEl?.closest(".select") },
         { key: "bet", title: "Bet Per Line", element: betEl?.closest(".select") },
         { key: "maxBetCredits", title: "Max Bet Credits", element: maxBetUsesAvailableCreditsEl?.closest(".checkbox-setting") },
-        { key: "adjustMoney", title: "Adjust Money", element: creditStepEl?.closest(".credit-controls") },
         { key: "winDelay", title: "Winning Highlight Delay", element: skipWinAnimationDelayEl?.closest(".checkbox-setting") },
         { key: "sessionStats", title: "Session Stats Display", element: sessionStatDisplayEl?.closest(".select") },
         { key: "creditsInserted", title: "Credits Inserted", element: creditsInsertedEl?.closest(".stat") },
@@ -887,7 +886,7 @@ function openSettingsOverlay() {
     if (!settingsOverlayEl) return;
     settingsOverlayEl.hidden = false;
     settingsButtonEl?.setAttribute("aria-expanded", "true");
-    showSettingsPage(settingsPageIndex);
+    showSettingsPage(0);
     syncOverlayOpenState();
 }
 
@@ -1214,7 +1213,7 @@ function resetSessionState() {
 function adjustBalanceByCredits(creditDelta) {
     const step = normalizeCreditStepValue(creditStepEl.value);
     creditStepEl.value = formatCreditStepValue(step);
-    const adjustmentUSD = roundUSD((step / 100) * creditDelta);
+    const adjustmentUSD = roundUSD(step * creditDelta);
     balance = clampBalanceUSD(balance + adjustmentUSD);
     if (adjustmentUSD > 0) {
         creditsInsertedUSD = roundUSD(creditsInsertedUSD + adjustmentUSD);
@@ -1260,18 +1259,14 @@ async function runAutoSpin() {
     updateAutoSpinHint();
     updateTotals();
 
+    let stoppedForInsufficientCredits = false;
     while (!autoSpinStopRequested) {
         const result = await doSpin({ silentNoWin: true });
         if (!result?.completed) {
             if (result?.reason === "insufficient_credits") {
                 updateRealtimeCreditMessage();
-                updateAutoSpinHint();
-                while (!autoSpinStopRequested && balance < getTotalBet()) {
-                    await new Promise((resolve) => setTimeout(resolve, 250));
-                }
-                if (autoSpinStopRequested) break;
-                updateAutoSpinHint();
-                continue;
+                stoppedForInsufficientCredits = true;
+                break;
             }
 
             await new Promise((resolve) => setTimeout(resolve, 100));
@@ -1300,6 +1295,7 @@ async function runAutoSpin() {
     updateAutoSpinControls();
     updateAutoSpinHint();
     updateTotals();
+    if (stoppedForInsufficientCredits) openLastChanceOverlay();
 }
 
 // Main Spin Flow
