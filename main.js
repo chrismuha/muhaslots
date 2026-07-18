@@ -34,6 +34,10 @@ const JACKPOT_TIERS = [
 const ROWS = 5;
 const COLS = 5;
 const MAX_OUTCOME_ATTEMPTS = 200;
+const FREE_SPINS_AWARD = 8;
+const FREE_SPINS_TRIGGER_RATE = 0.03;
+const BONUS_GAME_TRIGGER_RATE = 0.02;
+const BONUS_MULTIPLIERS = [2, 5, 10];
 const MONTE_CARLO_BASELINES_BY_LINES = {
     spins: 500000,
     byLines: {
@@ -157,6 +161,10 @@ let netSessionWinningsUSD = 0;
 let netSessionLossesUSD = 0;
 let actualSessionNetUSD = 0;
 let creditsInsertedUSD = INITIAL_CREDITS_USD;
+let freeSpinsRemaining = 0;
+let freeSpinWagerConfig = null;
+let featureStatusEl = null;
+let bonusOverlayEl = null;
 
 document.addEventListener("gesturestart", (e) => e.preventDefault());
 document.addEventListener("gesturechange", (e) => e.preventDefault());
@@ -364,6 +372,7 @@ function getActiveTotalBetUSD(totalBetOverrideUSD = totalBetDisplayOverrideUSD) 
 }
 
 function shouldOfferLastChanceSpin(totalBetOverrideUSD = totalBetDisplayOverrideUSD) {
+    if (freeSpinsRemaining > 0) return false;
     const totalBetUSD = getActiveTotalBetUSD(totalBetOverrideUSD);
     return balance > 0 && balance < totalBetUSD;
 }
@@ -388,7 +397,7 @@ function updateTotals() {
     const totalBet = getActiveTotalBetUSD();
     totalBetEl.textContent = fmtUSD(totalBet);
     balanceEl.textContent = fmtUSD(balance);
-    const canSpinNow = balance >= totalBet;
+    const canSpinNow = freeSpinsRemaining > 0 || balance >= totalBet;
     const canUseLastChance = balance > 0 && balance < totalBet;
     spinBtn.disabled = autoSpinRunning ? false : (!(canSpinNow || canUseLastChance) || isSpinning);
     maxBtn.disabled = isSpinning || autoSpinRunning;
@@ -403,7 +412,53 @@ function setMessage(msg) {
     messageEl.textContent = msg;
 }
 
+function updateFeatureStatus() {
+    if (!featureStatusEl) return;
+    featureStatusEl.textContent = freeSpinsRemaining > 0
+        ? `FREE SPINS: ${freeSpinsRemaining}`
+        : "Free Spins & Pick Bonus active";
+    featureStatusEl.classList.toggle("feature-active", freeSpinsRemaining > 0);
+}
+
+function setupFeatureUI() {
+    featureStatusEl = document.createElement("div");
+    featureStatusEl.className = "feature-status";
+    featureStatusEl.setAttribute("aria-live", "polite");
+    reelsEl.insertAdjacentElement("afterend", featureStatusEl);
+
+    bonusOverlayEl = document.createElement("div");
+    bonusOverlayEl.className = "feature-overlay";
+    bonusOverlayEl.hidden = true;
+    bonusOverlayEl.innerHTML = `<div class="feature-dialog" role="dialog" aria-modal="true" aria-labelledby="bonusTitle"><h2 id="bonusTitle">Pick a Neon Vault!</h2><p>One pick awards 2×, 5×, or 10× your triggering bet.</p><div class="bonus-choices"><button type="button">🎁</button><button type="button">🎁</button><button type="button">🎁</button></div></div>`;
+    document.body.appendChild(bonusOverlayEl);
+    updateFeatureStatus();
+}
+
+function playBonusGame(totalBetUSD) {
+    if (!bonusOverlayEl) return Promise.resolve(0);
+    bonusOverlayEl.hidden = false;
+    const buttons = Array.from(bonusOverlayEl.querySelectorAll(".bonus-choices button"));
+    return new Promise((resolve) => {
+        buttons.forEach((button) => {
+            button.disabled = false;
+            button.textContent = "🎁";
+            button.onclick = () => {
+                const multiplier = BONUS_MULTIPLIERS[Math.floor(Math.random() * BONUS_MULTIPLIERS.length)];
+                const winUSD = roundUSD(totalBetUSD * multiplier);
+                buttons.forEach((choice) => { choice.disabled = true; });
+                button.textContent = `${multiplier}×`;
+                setTimeout(() => {
+                    bonusOverlayEl.hidden = true;
+                    resolve(winUSD);
+                }, 900);
+            };
+        });
+        buttons[0]?.focus();
+    });
+}
+
 function getCreditStatusMessage(totalBetOverrideUSD = totalBetDisplayOverrideUSD) {
+    if (freeSpinsRemaining > 0) return "";
     const totalBetUSD = getActiveTotalBetUSD(totalBetOverrideUSD);
     if (balance <= 0) return "Out of credits. Add credits to continue.";
     if (balance < totalBetUSD) return "Insufficient credits for this bet. Lower bet/lines or add credits.";
@@ -1194,6 +1249,9 @@ function resetSessionState() {
     netSessionLossesUSD = 0;
     actualSessionNetUSD = 0;
     creditsInsertedUSD = INITIAL_CREDITS_USD;
+    freeSpinsRemaining = 0;
+    freeSpinWagerConfig = null;
+    updateFeatureStatus();
     resetCustomJackpotOdds();
     updateGameOddsDisplay();
 
@@ -1303,9 +1361,12 @@ async function doSpin(options = {}) {
     if (isSpinning) {
         return { completed: false, reason: "busy", totalWinUSD: 0 };
     }
-    const wagerConfig = getWagerConfig(options.totalBetOverrideUSD);
+    const isFreeSpin = freeSpinsRemaining > 0;
+    const wagerConfig = isFreeSpin && freeSpinWagerConfig
+        ? { ...freeSpinWagerConfig }
+        : getWagerConfig(options.totalBetOverrideUSD);
     const { totalBetUSD } = wagerConfig;
-    if (balance < totalBetUSD) {
+    if (!isFreeSpin && balance < totalBetUSD) {
         totalBetDisplayOverrideUSD = null;
         updateRealtimeCreditMessage();
         return { completed: false, reason: "insufficient_credits", totalWinUSD: 0 };
@@ -1316,8 +1377,13 @@ async function doSpin(options = {}) {
     updateTotals();
     clearMessage();
 
-    // Deduct bet up front
+    // Deduct paid bets up front. Free spins retain the triggering wager.
+    if (isFreeSpin) {
+        freeSpinsRemaining -= 1;
+        updateFeatureStatus();
+    } else {
         balance = clampBalanceUSD(balance - totalBetUSD);
+    }
     updateTotals();
 
     const instantSpin = Boolean(options.instant);
@@ -1332,13 +1398,21 @@ async function doSpin(options = {}) {
     const { totalWinUSD: regularWinUSD, lineWins, winningPositions } = evaluateGrid(grid, wagerConfig);
     const jackpotWins = resolveJackpotWins();
     const jackpotWinUSD = jackpotWins.reduce((sum, jackpot) => sum + jackpot.amountUSD, 0);
-    const totalWinUSD = roundUSD(regularWinUSD + jackpotWinUSD);
-    const lossComponentUSD = Math.max(totalBetUSD - totalWinUSD, 0);
+    const bonusTriggered = !isFreeSpin && Math.random() < BONUS_GAME_TRIGGER_RATE;
+    const bonusWinUSD = bonusTriggered ? await playBonusGame(totalBetUSD) : 0;
+    const freeSpinsTriggered = !isFreeSpin && Math.random() < FREE_SPINS_TRIGGER_RATE;
+    if (freeSpinsTriggered) {
+        freeSpinsRemaining += FREE_SPINS_AWARD;
+        freeSpinWagerConfig = { ...wagerConfig };
+        updateFeatureStatus();
+    }
+    const totalWinUSD = roundUSD(regularWinUSD + jackpotWinUSD + bonusWinUSD);
+    const lossComponentUSD = isFreeSpin ? 0 : Math.max(totalBetUSD - totalWinUSD, 0);
     renderOutcomeGrid(grid, winningPositions, jackpotWins);
     addSessionLosses(lossComponentUSD);
     addNetSessionLosses(lossComponentUSD);
     subtractNetSessionWinnings(lossComponentUSD);
-    adjustActualSessionNet(-totalBetUSD);
+    if (!isFreeSpin) adjustActualSessionNet(-totalBetUSD);
 
     // Payout
     if (totalWinUSD > 0) {
@@ -1351,6 +1425,8 @@ async function doSpin(options = {}) {
         const linesText = lineWins
             .map(w => `Line ${w.lineIndex}: ${w.symbol} × ${w.count} → ${fmtUSD(w.winUSD)}`)
             .concat(jackpotWins.map((jackpot) => `${jackpot.name.toUpperCase()} JACKPOT → ${fmtUSD(jackpot.amountUSD)}`))
+            .concat(bonusWinUSD ? [`PICK BONUS → ${fmtUSD(bonusWinUSD)}`] : [])
+            .concat(freeSpinsTriggered ? [`${FREE_SPINS_AWARD} FREE SPINS AWARDED`] : [])
             .join(" • ");
         setMessage(`WIN ${fmtUSD(totalWinUSD)} — ${linesText}`);
     } else {
@@ -1358,12 +1434,14 @@ async function doSpin(options = {}) {
         const status = getCreditStatusMessage(options.totalBetOverrideUSD);
         if (status) creditHint = ` ${status}`;
         if (!options.silentNoWin) {
-            setMessage(`No win — try again!${creditHint}`);
+            const featureText = freeSpinsTriggered ? ` ${FREE_SPINS_AWARD} FREE SPINS AWARDED!` : "";
+            setMessage(`${isFreeSpin ? "Free spin" : "No win — try again!"}${featureText}${creditHint}`);
         }
     }
 
     isSpinning = false;
     totalBetDisplayOverrideUSD = null;
+    if (freeSpinsRemaining === 0) freeSpinWagerConfig = null;
     updateTotals();
     syncLastChanceOverlayState();
 
@@ -1582,6 +1660,7 @@ document.addEventListener("keyup", (e) => {
 // Init
 (function init() {
     setupSettingsOverlay();
+    setupFeatureUI();
     if (skipWinAnimationDelayEl) skipWinAnimationDelayEl.checked = true;
     const grid = createGrid(() => randomSymbol());
     renderGrid(grid);
