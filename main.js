@@ -34,7 +34,6 @@ const JACKPOT_TIERS = [
 const ROWS = 5;
 const COLS = 5;
 const MAX_OUTCOME_ATTEMPTS = 200;
-const BONUS_MULTIPLIERS = [2, 5, 10];
 const MONTE_CARLO_BASELINES_BY_LINES = {
     spins: 500000,
     byLines: {
@@ -79,6 +78,8 @@ const freeSpinsOddsEl = document.getElementById("freeSpinsOdds");
 const freeSpinsAwardEl = document.getElementById("freeSpinsAward");
 const bonusGameOddsEl = document.getElementById("bonusGameOdds");
 const featureOddsRulesEl = document.getElementById("featureOddsRules");
+const bonusPrizeSelectEls = [1, 2, 3].map((number) => document.getElementById(`bonusPrize${number}`));
+const bonusPrizeCustomEls = [1, 2, 3].map((number) => document.getElementById(`bonusPrize${number}Custom`));
 const maxBetUsesAvailableCreditsEl = document.getElementById("maxBetUsesAvailableCredits");
 const skipWinAnimationDelayEl = document.getElementById("skipWinAnimationDelay");
 const creditStepEl = document.getElementById("creditStep");
@@ -416,7 +417,7 @@ function setMessage(msg) {
 function updateFeatureStatus() {
     if (!featureStatusEl) return;
     const freeSpinsActive = getFeatureRate(freeSpinsOddsEl, 0.03) > 0;
-    const bonusActive = getFeatureRate(bonusGameOddsEl, 0.02) > 0;
+    const bonusActive = getFeatureRate(bonusGameOddsEl, 0.01) > 0;
     if (freeSpinsRemaining > 0) {
         featureStatusEl.textContent = `FREE SPINS: ${freeSpinsRemaining}`;
     } else if (freeSpinsActive && bonusActive) {
@@ -437,11 +438,30 @@ function getFreeSpinsAward() {
     return Number.isFinite(value) && value > 0 ? value : 8;
 }
 
+function getBonusPrizeMultiplier(index) {
+    const select = bonusPrizeSelectEls[index];
+    const source = select?.value === "custom" ? bonusPrizeCustomEls[index]?.value : select?.value;
+    const value = Number.parseFloat(source);
+    return Number.isFinite(value) && value > 0 ? value : [2, 5, 10][index];
+}
+
+function getBonusPrizeMultipliers() {
+    return [0, 1, 2].map(getBonusPrizeMultiplier);
+}
+
+function syncBonusPrizeCustomInput(index) {
+    const customInput = bonusPrizeCustomEls[index];
+    const customLabel = customInput?.closest(".bonus-custom-label");
+    if (!customLabel) return;
+    customLabel.hidden = bonusPrizeSelectEls[index]?.value !== "custom";
+}
+
 function updateFeatureRules() {
     if (!featureOddsRulesEl) return;
     const freeRate = getFeatureRate(freeSpinsOddsEl, 0.03);
-    const bonusRate = getFeatureRate(bonusGameOddsEl, 0.02);
-    featureOddsRulesEl.textContent = `With the current settings, each paid spin independently has a ${(freeRate * 100).toFixed(0)}% win / ${((1 - freeRate) * 100).toFixed(0)}% loss chance to award ${getFreeSpinsAward()} free spins, and a ${(bonusRate * 100).toFixed(0)}% win / ${((1 - bonusRate) * 100).toFixed(0)}% loss chance to open Bonus Plays.`;
+    const bonusRate = getFeatureRate(bonusGameOddsEl, 0.01);
+    const prizes = getBonusPrizeMultipliers().map((value) => `${value}x`).join(", ");
+    featureOddsRulesEl.textContent = `With the current settings, each paid spin independently has a ${(freeRate * 100).toFixed(0)}% win / ${((1 - freeRate) * 100).toFixed(0)}% loss chance to award ${getFreeSpinsAward()} free spins, and a ${(bonusRate * 100).toFixed(0)}% win / ${((1 - bonusRate) * 100).toFixed(0)}% loss chance to open Bonus Plays. The three shuffled prizes are ${prizes} the triggering bet.`;
 }
 
 function setupFeatureUI() {
@@ -453,7 +473,12 @@ function setupFeatureUI() {
     bonusOverlayEl = document.createElement("div");
     bonusOverlayEl.className = "feature-overlay";
     bonusOverlayEl.hidden = true;
-    bonusOverlayEl.innerHTML = `<div class="feature-dialog" role="dialog" aria-modal="true" aria-labelledby="bonusTitle"><h2 id="bonusTitle">Pick a Neon Vault!</h2><p>One pick awards 2×, 5×, or 10× your triggering bet.</p><div class="bonus-choices"><button type="button">🎁</button><button type="button">🎁</button><button type="button">🎁</button></div></div>`;
+    bonusOverlayEl.innerHTML = `<div class="feature-dialog" role="dialog" aria-modal="true" aria-labelledby="bonusTitle"><h2 id="bonusTitle">Pick a Neon Vault!</h2><p>Pick one box to reveal a configured prize.</p><div class="bonus-choices"><button type="button">🎁</button><button type="button">🎁</button><button type="button">🎁</button></div></div>`;
+    bonusOverlayEl.addEventListener("keydown", (event) => {
+        if (event.code !== "Space") return;
+        event.preventDefault();
+        event.stopPropagation();
+    });
     document.body.appendChild(bonusOverlayEl);
     updateFeatureStatus();
 }
@@ -462,12 +487,13 @@ function playBonusGame(totalBetUSD) {
     if (!bonusOverlayEl) return Promise.resolve(0);
     bonusOverlayEl.hidden = false;
     const buttons = Array.from(bonusOverlayEl.querySelectorAll(".bonus-choices button"));
+    const prizes = getBonusPrizeMultipliers().sort(() => Math.random() - 0.5);
     return new Promise((resolve) => {
-        buttons.forEach((button) => {
+        buttons.forEach((button, index) => {
             button.disabled = false;
             button.textContent = "🎁";
             button.onclick = () => {
-                const multiplier = BONUS_MULTIPLIERS[Math.floor(Math.random() * BONUS_MULTIPLIERS.length)];
+                const multiplier = prizes[index];
                 const winUSD = roundUSD(totalBetUSD * multiplier);
                 buttons.forEach((choice) => { choice.disabled = true; });
                 button.textContent = `${multiplier}×`;
@@ -928,6 +954,7 @@ function getSettingsDefinitions() {
         { key: "freeSpinsOdds", title: "Free Spins Odds", element: freeSpinsOddsEl?.closest(".select") },
         { key: "freeSpinsAward", title: "Free Spins Award", element: freeSpinsAwardEl?.closest(".select") },
         { key: "bonusGameOdds", title: "Bonus Plays Odds", element: bonusGameOddsEl?.closest(".select") },
+        ...bonusPrizeSelectEls.map((select, index) => ({ key: `bonusPrize${index + 1}`, title: `Bonus Plays Prize ${index + 1}`, element: select?.closest(".select") })),
     ].filter((setting) => setting.element);
 }
 
@@ -1425,7 +1452,7 @@ async function doSpin(options = {}) {
     const { totalWinUSD: regularWinUSD, lineWins, winningPositions } = evaluateGrid(grid, wagerConfig);
     const jackpotWins = resolveJackpotWins();
     const jackpotWinUSD = jackpotWins.reduce((sum, jackpot) => sum + jackpot.amountUSD, 0);
-    const bonusTriggered = !isFreeSpin && Math.random() < getFeatureRate(bonusGameOddsEl, 0.02);
+    const bonusTriggered = !isFreeSpin && Math.random() < getFeatureRate(bonusGameOddsEl, 0.01);
     const bonusWinUSD = bonusTriggered ? await playBonusGame(totalBetUSD) : 0;
     const freeSpinsTriggered = !isFreeSpin && Math.random() < getFeatureRate(freeSpinsOddsEl, 0.03);
     const freeSpinsAwarded = getFreeSpinsAward();
@@ -1645,7 +1672,8 @@ document.addEventListener("keydown", (e) => {
 
     const overlayOpen =
         (previewOverlayEl && !previewOverlayEl.hidden) ||
-        (settingsOverlayEl && !settingsOverlayEl.hidden);
+        (settingsOverlayEl && !settingsOverlayEl.hidden) ||
+        (bonusOverlayEl && !bonusOverlayEl.hidden);
     const lastChanceOpen = lastChanceOverlayEl && !lastChanceOverlayEl.hidden;
     const isDesktop = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
     const isInteractiveControl = target?.closest?.("button, a, [role='button']");
@@ -1693,6 +1721,12 @@ document.addEventListener("keyup", (e) => {
         updateFeatureRules();
         updateFeatureStatus();
     }));
+    bonusPrizeSelectEls.forEach((select, index) => select?.addEventListener("change", () => {
+        syncBonusPrizeCustomInput(index);
+        updateFeatureRules();
+    }));
+    bonusPrizeCustomEls.forEach((input) => input?.addEventListener("input", updateFeatureRules));
+    bonusPrizeSelectEls.forEach((select, index) => syncBonusPrizeCustomInput(index));
     updateFeatureRules();
     if (skipWinAnimationDelayEl) skipWinAnimationDelayEl.checked = true;
     const grid = createGrid(() => randomSymbol());
