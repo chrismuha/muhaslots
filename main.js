@@ -34,9 +34,6 @@ const JACKPOT_TIERS = [
 const ROWS = 5;
 const COLS = 5;
 const MAX_OUTCOME_ATTEMPTS = 200;
-const FREE_SPINS_AWARD = 8;
-const FREE_SPINS_TRIGGER_RATE = 0.03;
-const BONUS_GAME_TRIGGER_RATE = 0.02;
 const BONUS_MULTIPLIERS = [2, 5, 10];
 const MONTE_CARLO_BASELINES_BY_LINES = {
     spins: 500000,
@@ -78,6 +75,10 @@ const denomEl = document.getElementById("denom");
 const linesEl = document.getElementById("lines");
 const betEl = document.getElementById("bet");
 const winOddsEl = document.getElementById("winOdds");
+const freeSpinsOddsEl = document.getElementById("freeSpinsOdds");
+const freeSpinsAwardEl = document.getElementById("freeSpinsAward");
+const bonusGameOddsEl = document.getElementById("bonusGameOdds");
+const featureOddsRulesEl = document.getElementById("featureOddsRules");
 const maxBetUsesAvailableCreditsEl = document.getElementById("maxBetUsesAvailableCredits");
 const skipWinAnimationDelayEl = document.getElementById("skipWinAnimationDelay");
 const creditStepEl = document.getElementById("creditStep");
@@ -414,10 +415,33 @@ function setMessage(msg) {
 
 function updateFeatureStatus() {
     if (!featureStatusEl) return;
-    featureStatusEl.textContent = freeSpinsRemaining > 0
-        ? `FREE SPINS: ${freeSpinsRemaining}`
-        : "Free Spins & Pick Bonus active";
-    featureStatusEl.classList.toggle("feature-active", freeSpinsRemaining > 0);
+    const freeSpinsActive = getFeatureRate(freeSpinsOddsEl, 0.03) > 0;
+    const bonusActive = getFeatureRate(bonusGameOddsEl, 0.02) > 0;
+    if (freeSpinsRemaining > 0) {
+        featureStatusEl.textContent = `FREE SPINS: ${freeSpinsRemaining}`;
+    } else if (freeSpinsActive && bonusActive) {
+        featureStatusEl.textContent = "Free Spins & Bonus Plays active";
+    } else {
+        featureStatusEl.textContent = `Free Spins ${freeSpinsActive ? "active" : "not active"} • Bonus Plays ${bonusActive ? "active" : "not active"}`;
+    }
+    featureStatusEl.classList.toggle("feature-active", freeSpinsRemaining > 0 || freeSpinsActive || bonusActive);
+}
+
+function getFeatureRate(select, fallback) {
+    const value = Number.parseFloat(select?.value);
+    return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
+}
+
+function getFreeSpinsAward() {
+    const value = Number.parseInt(freeSpinsAwardEl?.value, 10);
+    return Number.isFinite(value) && value > 0 ? value : 8;
+}
+
+function updateFeatureRules() {
+    if (!featureOddsRulesEl) return;
+    const freeRate = getFeatureRate(freeSpinsOddsEl, 0.03);
+    const bonusRate = getFeatureRate(bonusGameOddsEl, 0.02);
+    featureOddsRulesEl.textContent = `With the current settings, each paid spin independently has a ${(freeRate * 100).toFixed(0)}% win / ${((1 - freeRate) * 100).toFixed(0)}% loss chance to award ${getFreeSpinsAward()} free spins, and a ${(bonusRate * 100).toFixed(0)}% win / ${((1 - bonusRate) * 100).toFixed(0)}% loss chance to open Bonus Plays.`;
 }
 
 function setupFeatureUI() {
@@ -901,6 +925,9 @@ function getSettingsDefinitions() {
             title: `${tier.name} Jackpot Odds`,
             element: document.getElementById(tier.oddsElementId)?.closest(".select"),
         })),
+        { key: "freeSpinsOdds", title: "Free Spins Odds", element: freeSpinsOddsEl?.closest(".select") },
+        { key: "freeSpinsAward", title: "Free Spins Award", element: freeSpinsAwardEl?.closest(".select") },
+        { key: "bonusGameOdds", title: "Bonus Plays Odds", element: bonusGameOddsEl?.closest(".select") },
     ].filter((setting) => setting.element);
 }
 
@@ -1398,11 +1425,12 @@ async function doSpin(options = {}) {
     const { totalWinUSD: regularWinUSD, lineWins, winningPositions } = evaluateGrid(grid, wagerConfig);
     const jackpotWins = resolveJackpotWins();
     const jackpotWinUSD = jackpotWins.reduce((sum, jackpot) => sum + jackpot.amountUSD, 0);
-    const bonusTriggered = !isFreeSpin && Math.random() < BONUS_GAME_TRIGGER_RATE;
+    const bonusTriggered = !isFreeSpin && Math.random() < getFeatureRate(bonusGameOddsEl, 0.02);
     const bonusWinUSD = bonusTriggered ? await playBonusGame(totalBetUSD) : 0;
-    const freeSpinsTriggered = !isFreeSpin && Math.random() < FREE_SPINS_TRIGGER_RATE;
+    const freeSpinsTriggered = !isFreeSpin && Math.random() < getFeatureRate(freeSpinsOddsEl, 0.03);
+    const freeSpinsAwarded = getFreeSpinsAward();
     if (freeSpinsTriggered) {
-        freeSpinsRemaining += FREE_SPINS_AWARD;
+        freeSpinsRemaining += freeSpinsAwarded;
         freeSpinWagerConfig = { ...wagerConfig };
         updateFeatureStatus();
     }
@@ -1425,8 +1453,8 @@ async function doSpin(options = {}) {
         const linesText = lineWins
             .map(w => `Line ${w.lineIndex}: ${w.symbol} × ${w.count} → ${fmtUSD(w.winUSD)}`)
             .concat(jackpotWins.map((jackpot) => `${jackpot.name.toUpperCase()} JACKPOT → ${fmtUSD(jackpot.amountUSD)}`))
-            .concat(bonusWinUSD ? [`PICK BONUS → ${fmtUSD(bonusWinUSD)}`] : [])
-            .concat(freeSpinsTriggered ? [`${FREE_SPINS_AWARD} FREE SPINS AWARDED`] : [])
+            .concat(bonusWinUSD ? [`BONUS PLAYS → ${fmtUSD(bonusWinUSD)}`] : [])
+            .concat(freeSpinsTriggered ? [`${freeSpinsAwarded} FREE SPINS AWARDED`] : [])
             .join(" • ");
         setMessage(`WIN ${fmtUSD(totalWinUSD)} — ${linesText}`);
     } else {
@@ -1434,7 +1462,7 @@ async function doSpin(options = {}) {
         const status = getCreditStatusMessage(options.totalBetOverrideUSD);
         if (status) creditHint = ` ${status}`;
         if (!options.silentNoWin) {
-            const featureText = freeSpinsTriggered ? ` ${FREE_SPINS_AWARD} FREE SPINS AWARDED!` : "";
+            const featureText = freeSpinsTriggered ? ` ${freeSpinsAwarded} FREE SPINS AWARDED!` : "";
             setMessage(`${isFreeSpin ? "Free spin" : "No win — try again!"}${featureText}${creditHint}`);
         }
     }
@@ -1661,6 +1689,11 @@ document.addEventListener("keyup", (e) => {
 (function init() {
     setupSettingsOverlay();
     setupFeatureUI();
+    [freeSpinsOddsEl, freeSpinsAwardEl, bonusGameOddsEl].forEach((select) => select?.addEventListener("change", () => {
+        updateFeatureRules();
+        updateFeatureStatus();
+    }));
+    updateFeatureRules();
     if (skipWinAnimationDelayEl) skipWinAnimationDelayEl.checked = true;
     const grid = createGrid(() => randomSymbol());
     renderGrid(grid);
