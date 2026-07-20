@@ -1326,11 +1326,11 @@ function adjustBalanceByCredits(creditDelta) {
     const step = normalizeCreditStepValue(creditStepEl.value);
     creditStepEl.value = formatCreditStepValue(step);
     const adjustmentUSD = roundUSD(step * creditDelta);
+    const previousBalanceUSD = balance;
     balance = clampBalanceUSD(balance + adjustmentUSD);
-    if (adjustmentUSD > 0) {
-        creditsInsertedUSD = roundUSD(creditsInsertedUSD + adjustmentUSD);
-        updateCreditsInsertedDisplay();
-    }
+    const appliedAdjustmentUSD = roundUSD(balance - previousBalanceUSD);
+    creditsInsertedUSD = clampBalanceUSD(creditsInsertedUSD + appliedAdjustmentUSD);
+    updateCreditsInsertedDisplay();
     updateTotals();
     updateRealtimeCreditMessage();
     syncLastChanceOverlayState();
